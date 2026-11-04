@@ -200,6 +200,11 @@ const rfx = await ev(`(()=>{const r=[];if(REFLEX.length!==30)r.push('thiếu bà
   roadTab='R';renderRoad();if(!document.querySelector('#road .today'))r.push('thiếu thẻ Hôm nay');if(document.querySelectorAll('#road .today .unit').length!==5)r.push('thẻ Hôm nay không đủ 5 việc');roadTab='I';renderRoad();
   if(!/Lộ trình/.test(document.querySelector('[data-view=vRoad]').textContent))r.push('tab dưới chưa đổi tên Lộ trình');return r})()`);
 check(!rfx?.length, 'phản xạ: 30 bài, prompt gọi, chấm điểm + đo thời gian phản xạ, thẻ Hôm nay', Array.isArray(rfx) ? rfx.join('; ') : JSON.stringify(rfx));
+const gr = await ev(`(()=>{const r=[],o=callMode,n0=document.querySelectorAll('#chat .cmd').length;document.querySelector('#segMode2 [data-m=roast]').click();
+  const last=[...document.querySelectorAll('#chat .cmd')].at(-1)?.textContent||'';if(!/Cục súc/.test(last))r.push('đổi chế độ không báo trong chat');
+  document.querySelector('#segMode2 [data-m=roast]').click();if(document.querySelectorAll('#chat .cmd').length!==n0+1)r.push('bấm lại cùng chế độ vẫn báo lặp');
+  setCallMode(o);return r})()`);
+check(!gr?.length, 'đổi chế độ: khung chat báo chế độ mới (không lặp)', Array.isArray(gr) ? gr.join('; ') : JSON.stringify(gr));
 check(!zh?.length, 'chế độ HSK3: dạy tiếng Trung · cho phép chữ Hán · nạp tiến độ', Array.isArray(zh) ? zh.join('; ') : JSON.stringify(zh));
 const ci = await ev(`(()=>{document.querySelector('nav button[data-view=vRoad]').click();const k=document.getElementById('road').children.length;document.querySelector('nav button[data-view=vChat]').click();document.getElementById('openSet').click();const d=document.getElementById('set').open;document.getElementById('set').close();return {k,d}})()`);
 check(ci?.k > 2 && ci?.d, 'tab IELTS dựng được, hộp Cài đặt mở được', JSON.stringify(ci));

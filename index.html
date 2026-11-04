@@ -890,7 +890,9 @@ $('#reset').onclick = () => {
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
 };
 
-function greet() { render({ role: 'model', text: "Hey! I'm Sam, your IELTS buddy.\nHow's your day going?\n💡 Cứ nói thoải mái như với bạn bè, bí chữ thì nói tiếng Việt, mình chỉ cách người bản xứ nói. Bấm 📞 Gọi để nói chuyện bằng giọng. Thi thử Speaking, chấm Writing và lộ trình band ở tab 🎯 IELTS." }); }
+function greet() {
+  if (callMode !== 'learn') { $('#chat').append(el('div', 'cmd', MODE_INTRO[callMode])); return; }
+  render({ role: 'model', text: "Hey! I'm Sam, your IELTS buddy.\nHow's your day going?\n💡 Cứ nói thoải mái như với bạn bè, bí chữ thì nói tiếng Việt, mình chỉ cách người bản xứ nói. Bấm 📞 Gọi để nói chuyện bằng giọng. Thi thử Speaking, chấm Writing và lộ trình band ở tab 🎯 IELTS." }); }
 
 // ===== GỌI THOẠI TRỰC TIẾP (Gemini Live): nghe & nói thời gian thực, giọng có cảm xúc, chen ngang được =====
 // Đo 07/10/2026 với khoá free: kết nối 0,6s, có giọng sau ~2s, gọi hàm save_profile chạy.
@@ -1108,7 +1110,18 @@ function callEnd(L, msg) {
 }
 
 const setCallMode = m => { callMode = m; store('gs_mode', m); document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); $('#text').placeholder = m === 'roast' ? 'Hỏi kiểu: gội đầu tiếng Anh nói sao?' : m === 'zh' ? 'Gõ tiếng Trung, pinyin hoặc tiếng Việt…' : m === 'chat' ? 'Tâm sự, hoặc dán tin của sếp…' : 'Nhắn cho Sam…'; };
-document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.onclick = () => setCallMode(b.dataset.m)); setCallMode(callMode);
+const MODE_INTRO = {
+  learn: '— 📚 Chế độ Học: nói chuyện bằng tiếng Anh, hỏi "X tiếng Anh nói sao?", Sam sửa và bắt nói lại —',
+  chat: '— 💬 Chế độ Tâm sự: nói gì cũng được, không học; dán tin nhắn của sếp để Sam soạn 2 bản trả lời —',
+  roast: '— 😈 Chế độ Cục súc: Sam người Mỹ chửi yêu khi bạn nói sai, bắt nói lại tới khi đúng —',
+  zh: '— 🀄 Chế độ HSK3: học tiếng Trung, gõ chữ Hán, pinyin hay tiếng Việt đều được —',
+};
+document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.onclick = () => {
+  if (b.dataset.m === callMode) return;
+  setCallMode(b.dataset.m);
+  $('#chat').append(el('div', 'cmd', MODE_INTRO[callMode])); $('#chat').scrollTop = 1e9; // báo chế độ mới ngay trong khung chat
+});
+setCallMode(callMode);
 $('#callGo').onclick = () => callStart();
 setTimeout(() => window.Avatar?.init(), 300); // tải sẵn nhân vật 3D (~9 MB, lần đầu) khi mở app
 $('#callStop').onclick = () => callEnd(live);
