@@ -316,6 +316,9 @@ function painting(scene, env, far) {
     for (const j in domes) { const v = domes[j].video; if (v) j === k ? play(v) : v.pause(); }
     env.userData.videoOn = k[0] === 'v'; env.userData.retint?.();
   };
+  document.addEventListener('visibilitychange', () => { // tiết kiệm pin: app chạy nền thì không giải mã video 1080p
+    for (const j in domes) { const v = domes[j].video; if (!v) continue; if (document.hidden) v.pause(); else if (j === cur) play(v); }
+  });
   const slot = key => { const d = domes[key] = { group: new THREE.Group() }; env.add(d.group); return d; };
   function loadImg(name) {
     const key = 'p:' + name; if (domes[key]) return; const d = slot(key);

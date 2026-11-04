@@ -68,3 +68,7 @@ Khung đặt bằng `head.setView('full', {cameraDistance, cameraY, cameraRotate
 ### Phản xạ (⚡) và thẻ Hôm nay
 
 `REFLEX` (R1–R3, 30 bài) nằm trong `EXTRA`. `startDrill(id)` mở cuộc gọi với `[REFLEX id]`; luật REFLEX DRILL nằm trong `livePrompt()` nên chế độ Cục súc kế thừa. Đo phản xạ: `callUI` bấm giờ khi chuyển sang `listening` (Sam nói xong), bộ worklet micro dừng giờ ở khúc thứ 3 liên tiếp có RMS > 0,03 (`voiceLevel`); bỏ số < 150 ms hoặc > 15 s; hiện trên thanh trạng thái. Hết cuộc gọi `logDrill` lưu `{date, unit, avg, n}` vào `gs_reflex` (tối đa 200 buổi). Sam gọi `save_drill` → `saveDrill` chấm điểm 0–10 vào `ie_scores`. `todayCard()` gom: 1 bài phản xạ, ôn từ đến hạn, 1 bài từ mới, 1 bài ngữ pháp, gọi tự do.
+
+### Tiết kiệm pin khi chạy nền
+
+Khi app bị ẩn (`visibilitychange`): dừng mọi video nền (`xianxia.mjs`), dừng vòng vẽ TalkingHead (`head.stop()`), bỏ qua hẹn giờ cập nhật cảnh và thời tiết; nếu đang gọi thì sau 60 s chạy nền tự tắt cuộc gọi (micro + WebSocket Gemini). Mở lại app: phát lại video đang dùng, `head.start()`, cập nhật cảnh và thời tiết ngay.

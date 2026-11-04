@@ -205,6 +205,12 @@ const gr = await ev(`(()=>{const r=[],o=callMode,n0=document.querySelectorAll('#
   document.querySelector('#segMode2 [data-m=roast]').click();if(document.querySelectorAll('#chat .cmd').length!==n0+1)r.push('bấm lại cùng chế độ vẫn báo lặp');
   setCallMode(o);return r})()`);
 check(!gr?.length, 'đổi chế độ: khung chat báo chế độ mới (không lặp)', Array.isArray(gr) ? gr.join('; ') : JSON.stringify(gr));
+const bgx = await ev(`(async()=>{const r=[];const vids=[];window.Avatar.head.scene.traverse(o=>{const v=o.material?.map?.image;if(v instanceof HTMLVideoElement&&!vids.includes(v))vids.push(v)});
+  const hid=Object.getOwnPropertyDescriptor(Document.prototype,'hidden');Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));await new Promise(z=>setTimeout(z,300));
+  if(vids.some(v=>!v.paused))r.push('ẩn app mà video nền vẫn chạy');if(typeof bgTimer==='undefined')r.push('thiếu hẹn giờ tắt cuộc gọi chạy nền');
+  Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));await new Promise(z=>setTimeout(z,1500));delete document.hidden;
+  if(vids.length&&!vids.some(v=>!v.paused))r.push('mở lại app mà video nền không phát lại');return r})()`);
+check(!bgx?.length, 'tiết kiệm pin: ẩn app dừng video nền + vẽ 3D, mở lại thì chạy tiếp', Array.isArray(bgx) ? bgx.join('; ') : JSON.stringify(bgx));
 check(!zh?.length, 'chế độ HSK3: dạy tiếng Trung · cho phép chữ Hán · nạp tiến độ', Array.isArray(zh) ? zh.join('; ') : JSON.stringify(zh));
 const ci = await ev(`(()=>{document.querySelector('nav button[data-view=vRoad]').click();const k=document.getElementById('road').children.length;document.querySelector('nav button[data-view=vChat]').click();document.getElementById('openSet').click();const d=document.getElementById('set').open;document.getElementById('set').close();return {k,d}})()`);
 check(ci?.k > 2 && ci?.d, 'tab IELTS dựng được, hộp Cài đặt mở được', JSON.stringify(ci));
