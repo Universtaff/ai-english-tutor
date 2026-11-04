@@ -64,3 +64,7 @@ Khung đặt bằng `head.setView('full', {cameraDistance, cameraY, cameraRotate
 ### Lộ trình Ngữ pháp & Từ vựng
 
 `GRAMMAR` (G1–G4) và `VOCAB` (V1–V4) = 40 bài mỗi mảng, gộp vào `EXTRA`; `unitById` tìm cả `UNITS` (IELTS) lẫn `EXTRA`. `lessonText(u)` chọn nội dung bài theo `u.track`. Điểm bài lưu chung `ie_scores`. Sổ từ `gs_vocab` (tối đa 600 từ, `addVocab`/`reviewVocab`/`dueWords`, Leitner hộp 0–4 → 1·3·7·14·30 ngày): Sam thêm từ bằng thẻ `<words>` cuối bài từ vựng; lệnh `[WORDS] a = nghĩa; b = nghĩa` ôn tối đa 10 từ đến hạn và trả `<review>{ok,miss}</review>`. `renderRoad` có 3 tab (`roadTab`, lưu `gs_road`).
+
+### Phản xạ (⚡) và thẻ Hôm nay
+
+`REFLEX` (R1–R3, 30 bài) nằm trong `EXTRA`. `startDrill(id)` mở cuộc gọi với `[REFLEX id]`; luật REFLEX DRILL nằm trong `livePrompt()` nên chế độ Cục súc kế thừa. Đo phản xạ: `callUI` bấm giờ khi chuyển sang `listening` (Sam nói xong), bộ worklet micro dừng giờ ở khúc thứ 3 liên tiếp có RMS > 0,03 (`voiceLevel`); bỏ số < 150 ms hoặc > 15 s; hiện trên thanh trạng thái. Hết cuộc gọi `logDrill` lưu `{date, unit, avg, n}` vào `gs_reflex` (tối đa 200 buổi). Sam gọi `save_drill` → `saveDrill` chấm điểm 0–10 vào `ie_scores`. `todayCard()` gom: 1 bài phản xạ, ôn từ đến hạn, 1 bài từ mới, 1 bài ngữ pháp, gọi tự do.

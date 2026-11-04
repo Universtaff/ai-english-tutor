@@ -58,7 +58,7 @@
   #mic.on { background:#dc2626; color:#fff; animation:pulse 1s ease-in-out infinite; }
 
   #road { overflow-y:auto; padding:12px 12px 28px; }
-  #roadTabs { display:flex; gap:6px; margin-bottom:12px; } #roadTabs button { flex:1; min-height:44px; border:1px solid var(--line); background:#fff; border-radius:99px; font-weight:600; font-size:14px; color:var(--mute); } #roadTabs button.on { background:var(--me); color:var(--main); border-color:var(--main); }
+  #roadTabs { display:flex; gap:6px; margin-bottom:12px; } #roadTabs button { flex:1; min-width:0; padding:0 4px; min-height:44px; border:1px solid var(--line); background:#fff; border-radius:99px; font-weight:600; font-size:13px; color:var(--mute); } .today .unit .t { font-size:14.5px; } .today .unit.ok .t { color:var(--mute); text-decoration:line-through; } #roadTabs button.on { background:var(--me); color:var(--main); border-color:var(--main); }
   .acts button:disabled { opacity:.5; }
   .card { background:#fff; border-radius:18px; padding:14px 16px; margin-bottom:12px; border:1px solid var(--line); box-shadow:0 1px 3px #3b0a1f0d; }
   .card h2 { font-size:16px; margin:0 0 8px; }
@@ -187,7 +187,7 @@
 </div>
 <nav>
   <button data-view="vChat" class="on"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Nói chuyện</button>
-  <button data-view="vRoad"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>IELTS</button>
+  <button data-view="vRoad"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Lộ trình</button>
 </nav>
 
 <section id="vChat" class="view">
@@ -279,6 +279,9 @@ const UNITS = [
 const unitById = id => UNITS.find(u => u.id === id) || EXTRA.find(u => u.id === id);
 // LỘ TRÌNH NGỮ PHÁP (G) và TỪ VỰNG (V): 4 cấp × 10 bài, dùng chung cơ chế bài học [LESSON id] + điểm 0–10 của lộ trình IELTS.
 const LEVELS = {
+  R: { 1: ['Cơ bản · đời thường', 'Câu hỏi dồn dập về đời sống, gọi món, hỏi đường, phản ứng cảm xúc, dịch nhanh câu tiếng Việt.'],
+       2: ['Công việc · phỏng vấn', 'Sếp, đồng nghiệp, khách hàng, phỏng vấn xin việc — trả lời ngay, không dịch trong đầu.'],
+       3: ['Tự nhiên như người Mỹ', 'Tiếng lóng, đùa, phản biện, IELTS ứng biến, nói nhanh và nối âm.'] },
   G: { 1: ['Nền tảng · A2', 'Câu đơn giản, thì cơ bản, mạo từ, giới từ — sửa tận gốc lỗi dịch từng chữ từ tiếng Việt.'],
        2: ['Trung cấp · B1', 'Các thì hoàn thành, điều kiện, bị động, mệnh đề quan hệ — nói và viết được câu dài đúng.'],
        3: ['Khá · B2', 'Điều kiện hỗn hợp, suy đoán, rút gọn mệnh đề, mạo từ nâng cao — nền cho IELTS 6.5–7.'],
@@ -373,7 +376,49 @@ const VOCAB = mkUnits('V', [
   ['V4-09', 'Kỹ thuật học từ qua đọc/nghe', 'đoán nghĩa theo ngữ cảnh, shadowing, sổ từ cá nhân'],
   ['V4-10', 'Ôn tập tổng hợp', 'ôn cách quãng toàn bộ từ đã học và kiểm tra'],
 ]);
-const EXTRA = [...GRAMMAR, ...VOCAB];
+const REFLEX = mkUnits('R', [
+  ['R1-01', 'Giới thiệu bản thân thật nhanh', 'tên, nghề, sống ở đâu, thích gì — mỗi câu trả lời dưới 3 giây'],
+  ['R1-02', 'Thói quen hằng ngày', 'hỏi dồn về ngày của bạn, trả lời 1 câu tự nhiên'],
+  ['R1-03', 'Gọi món & cà phê', 'đóng vai quán cà phê, nhà hàng: gọi, đổi món, tính tiền'],
+  ['R1-04', 'Mua sắm & trả giá', 'hỏi giá, size, đổi trả, mặc cả'],
+  ['R1-05', 'Hỏi đường & đi lại', 'chỉ đường, gọi xe, lỡ chuyến, sân bay'],
+  ['R1-06', 'Phản ứng cảm xúc', 'No way! / That sucks / I\'m so down — đáp đúng cảm xúc ngay lập tức'],
+  ['R1-07', 'Đồng ý & từ chối khéo', 'nhận lời, từ chối, hẹn lại mà không cứng'],
+  ['R1-08', 'Dịch nhanh câu đời thường', 'Sam nói câu tiếng Việt, bạn nói ngay bằng tiếng Anh'],
+  ['R1-09', 'Shadowing câu ngắn', 'nhại đúng nhịp, nối âm, nuốt âm của người Mỹ'],
+  ['R1-10', 'Tổng hợp cấp 1', 'trộn mọi dạng, tốc độ tăng dần'],
+  ['R2-01', 'Small talk đầu cuộc họp', 'cuối tuần, thời tiết, dự án — nói chuyện xã giao không khựng'],
+  ['R2-02', 'Sếp giao việc', 'xác nhận, hỏi lại cho rõ, nêu vướng mắc'],
+  ['R2-03', 'Xin dời deadline & báo trễ', 'nói thật mà vẫn chuyên nghiệp'],
+  ['R2-04', 'Báo cáo tiến độ 30 giây', 'đã xong gì, đang kẹt gì, cần gì'],
+  ['R2-05', 'Khách phàn nàn', 'xin lỗi, xoa dịu, đưa hướng xử lý'],
+  ['R2-06', 'Phỏng vấn: câu hỏi tình huống', 'Tell me about a time… trả lời theo khung STAR thật gọn'],
+  ['R2-07', 'Phỏng vấn: điểm mạnh & thành tích', 'nói về bản thân mà không khoe lố'],
+  ['R2-08', 'Đưa ý kiến trong họp', 'chen lời, phản đối nhẹ, đề xuất'],
+  ['R2-09', 'Gọi điện & để lại lời nhắn', 'nghe máy, chuyển máy, nhắn lại'],
+  ['R2-10', 'Dịch nhanh câu công sở', 'câu tiếng Việt văn phòng → tiếng Anh tức thì'],
+  ['R3-01', 'Tiếng lóng hằng ngày', 'nghe lóng Mỹ là hiểu và đáp lại bằng lóng'],
+  ['R3-02', 'Đùa & đáp trả nhanh', 'bị trêu thì trêu lại, giữ không khí vui'],
+  ['R3-03', 'Kể chuyện 30 giây', 'kể một chuyện có mở – thắt – kết thật nhanh'],
+  ['R3-04', 'Phản biện nhanh', 'Sam nêu quan điểm gây tranh cãi, bạn phản bác ngay'],
+  ['R3-05', 'IELTS Part 1 tốc độ', 'câu hỏi Part 1 dồn dập, trả lời 2 câu có mở rộng'],
+  ['R3-06', 'IELTS Part 3 ứng biến', 'câu hỏi trừu tượng không báo trước'],
+  ['R3-07', 'Câu hỏi bất ngờ', 'chủ đề nhảy lung tung, không cho chuẩn bị'],
+  ['R3-08', 'Nói nhanh như người Mỹ', 'shadowing câu dài, gonna/wanna, nối âm'],
+  ['R3-09', 'Tình huống khẩn cấp', 'đi khám, mất đồ, báo công an, sự cố khi du lịch'],
+  ['R3-10', 'Tổng duyệt phản xạ', 'trộn tất cả dạng, đo tốc độ trung bình cuối khoá'],
+]);
+const EXTRA = [...GRAMMAR, ...VOCAB, ...REFLEX];
+// Nhật ký phản xạ: mỗi buổi luyện lưu thời gian từ lúc Sam nói xong tới lúc bạn bắt đầu nói (đo bằng micro).
+let reflexLog = load('gs_reflex', []); // {date, unit, avg, n}
+const voiceLevel = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); }; // độ to (RMS) một khúc mẫu micro
+let pendingDrill = null;
+function startDrill(id) {
+  const u = unitById(id); if (!u) return;
+  if (callMode === 'chat' || callMode === 'zh') setCallMode('learn');
+  unit = id; store('ie_unit', unit); pendingDrill = id; $('#call').hidden = false;
+  callStart(`[REFLEX ${id}] Start the reflex drill "${u.t}" now — focus: ${u.d}.`);
+}
 
 // Sổ từ (Leitner): mỗi từ có hộp 0–4, đến hạn sau 1·3·7·14·30 ngày; đúng thì lên hộp, sai thì về hộp 0. Chỉ lưu trên máy.
 const BOX_DAYS = [1, 3, 7, 14, 30];
@@ -576,7 +621,7 @@ function setMode(m) {
 
 function cmdLabel(text) {
   if (/^\[WORDS\]/.test(text)) return '— Ôn từ vựng đến hạn —';
-  const m = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON)(?: ((?:B[5-8]|[GV][1-4])-\d\d))?\]$/);
+  const m = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON)(?: ((?:B[5-8]|[GVR][1-4])-\d\d))?\]$/);
   if (!m) return null;
   if (m[1] === 'LESSON') return `— Bài ${m[2]}: ${unitById(m[2])?.t || ''} —`;
   return { SPEAKING: '— Thi thử IELTS Speaking —', WRITING: '— Chấm IELTS Writing —', TALK: '— Quay lại nói chuyện —', REVIEW: '— Ôn điểm yếu —' }[m[1]];
@@ -608,32 +653,53 @@ function render(m) {
 function renderRoad() {
   const road = $('#road'); road.innerHTML = '';
   const tabs = el('div'); tabs.id = 'roadTabs';
-  for (const [k, label] of [['I', '🎯 IELTS'], ['G', '📐 Ngữ pháp'], ['V', '📖 Từ vựng']]) {
+  road.append(todayCard());
+  for (const [k, label] of [['I', 'IELTS'], ['R', '⚡ Phản xạ'], ['G', 'Ngữ pháp'], ['V', 'Từ vựng']]) {
     const b = el('button', roadTab === k ? 'on' : '', label); b.onclick = () => { roadTab = k; store('gs_road', k); renderRoad(); }; tabs.append(b);
   }
   road.append(tabs);
-  if (roadTab === 'G' || roadTab === 'V') return renderTrack(road, roadTab);
+  if (roadTab !== 'I') return renderTrack(road, roadTab);
   renderIelts(road);
 }
+// Thẻ "Hôm nay": gom 4 việc mỗi ngày từ mọi lộ trình, việc nào đã làm hôm nay thì đánh dấu ✓.
+function todayCard() {
+  const nextOf = l => l.find(u => !scores[u.id]) || l[l.length - 1], doneToday = l => l.some(u => scores[u.id]?.date === today());
+  const r = nextOf(REFLEX), v = nextOf(VOCAB), g = nextOf(GRAMMAR), due = dueWords().length;
+  const c = el('div', 'card today'); c.append(el('h2', '', '📅 Hôm nay học gì (~30 phút)'));
+  const items = [
+    [`⚡ Phản xạ 5 phút: ${r.t}`, doneToday(REFLEX) || reflexLog.some(x => x.date === today()), () => startDrill(r.id)],
+    [due ? `🔁 Ôn ${due} từ đến hạn` : '🔁 Không có từ đến hạn', !due, startWords],
+    [`📖 Từ mới: ${v.t}`, doneToday(VOCAB), () => startLesson(v.id)],
+    [`📐 Ngữ pháp: ${g.t}`, doneToday(GRAMMAR), () => startLesson(g.id)],
+    ['📞 Gọi Sam nói chuyện tự do 10 phút', false, () => { $('#call').hidden = false; callStart(); }],
+  ];
+  for (const [t, ok, fn] of items) {
+    const row = el('div', 'unit' + (ok ? ' ok' : '')), b = el('button', ok ? '' : 'pri', ok ? '✓' : 'Làm');
+    row.append(el('div', 't', t)); b.disabled = ok; b.onclick = fn; row.append(b); c.append(row);
+  }
+  return c;
+}
 function renderTrack(road, k) {
-  const list = k === 'G' ? GRAMMAR : VOCAB, name = k === 'G' ? 'ngữ pháp' : 'từ vựng';
+  const list = { G: GRAMMAR, V: VOCAB, R: REFLEX }[k], name = { G: 'ngữ pháp', V: 'từ vựng', R: 'phản xạ' }[k], run = k === 'R' ? startDrill : startLesson;
   const done = list.filter(u => scores[u.id]), nxt = list.find(u => !scores[u.id]) || list[list.length - 1];
   const avg = done.length ? (done.reduce((a, u) => a + scores[u.id].score, 0) / done.length).toFixed(1) : '–';
   const sum = el('div', 'card'); sum.append(el('h2', '', `Lộ trình ${name}`));
   const st = el('div', 'stats'), due = dueWords().length;
-  for (const [v, t] of [[`${done.length}/${list.length}`, 'bài đã học'], [avg, 'điểm TB /10'], k === 'V' ? [vocab.length, `từ đã lưu · ${due} đến hạn`] : [LEVELS.G[nxt.st][0].split(' · ')[1], 'cấp hiện tại']]) {
+  for (const [v, t] of [[`${done.length}/${list.length}`, 'bài đã học'], [avg, 'điểm TB /10'], k === 'V' ? [vocab.length, `từ đã lưu · ${due} đến hạn`] : k === 'R' ? [reflexLog.length ? (reflexLog.slice(-5).reduce((a, x) => a + x.avg, 0) / Math.min(5, reflexLog.length) / 1000).toFixed(1) + ' s' : '–', 'phản xạ TB 5 buổi gần'] : [LEVELS.G[nxt.st][0].split(' · ')[1], 'cấp hiện tại']]) {
     const d = el('div'); d.append(el('b', '', v), el('span', '', t)); st.append(d);
   }
   sum.append(st);
   const acts = el('div', 'acts');
-  const go = el('button', 'pri', `📚 Bài tiếp theo: ${nxt.id.slice(3)}`); go.onclick = () => startLesson(nxt.id); acts.append(go);
+  const go = el('button', 'pri', `${k === 'R' ? '⚡ Luyện' : '📚 Bài'} tiếp theo: ${nxt.id.slice(3)}`); go.onclick = () => run(nxt.id); acts.append(go);
   const pl = el('button', '', '🎯 Test đầu vào'); pl.onclick = () => start(k === 'G'
     ? 'Please run a 10-question placement test for my English GRAMMAR, from A2 up to C1, one question at a time, getting harder. At the end tell me my level and which unit (G1-01 … G4-10) I should start from.'
     : 'Please run a 10-question placement test for my English VOCABULARY, from everyday words up to C1 academic words, one question at a time, getting harder. At the end tell me my level (V1–V4) and which unit I should start from.');
-  acts.append(pl);
+  if (k !== 'R') acts.append(pl);
   if (k === 'V') { const rv = el('button', due ? 'pri' : '', due ? `🔁 Ôn ${due} từ đến hạn` : '🔁 Chưa có từ đến hạn'); rv.disabled = !due; rv.onclick = startWords; acts.append(rv); }
   sum.append(acts);
-  sum.append(el('p', 'hint', k === 'G'
+  sum.append(el('p', 'hint', k === 'R'
+    ? 'Luyện bằng cuộc gọi: Sam hỏi dồn, bạn trả lời ngay trong 3 giây, không dịch trong đầu. App đo thời gian từ lúc Sam nói xong tới lúc bạn mở miệng (bằng micro). Mỗi ngày 5 phút là đủ; mục tiêu dưới 1,5 giây.'
+    : k === 'G'
     ? 'Mỗi ngày 1 phần bài (15 phút), rồi dùng ngay cấu trúc đó khi nói chuyện với Sam (chế độ Cục súc sẽ bắt lỗi rất gắt). Cứ 5 bài thì làm lại 1 bài cũ để không quên.'
     : 'Mỗi ngày: 1 bài từ mới (8–10 từ) + ôn các từ đến hạn. Từ được ôn theo lịch 1·3·7·14·30 ngày: nhớ đúng thì giãn lịch, sai thì ôn lại từ đầu.'));
   road.append(sum);
@@ -645,7 +711,7 @@ function renderTrack(road, k) {
       const row = el('div', 'unit' + (u === nxt ? ' next' : '')), t = el('div', 't');
       t.append(el('b', '', `${u.id.slice(3)}. ${u.t}`), el('small', '', u.d)); row.append(t);
       if (scores[u.id]) row.append(el('span', 's', `${scores[u.id].score}/10`));
-      const b = el('button', '', scores[u.id] ? 'Học lại' : u === nxt ? 'Học' : 'Mở'); b.onclick = () => startLesson(u.id); row.append(b); c.append(row);
+      const b = el('button', '', scores[u.id] ? (k === 'R' ? 'Luyện lại' : 'Học lại') : u === nxt ? (k === 'R' ? 'Luyện' : 'Học') : 'Mở'); b.onclick = () => run(u.id); row.append(b); c.append(row);
     }
     road.append(c);
   }
@@ -836,6 +902,8 @@ const LIVE_TOOLS = [{ functionDeclarations: [
     parameters: { type: 'OBJECT', properties: { notes: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['notes'] } },
   { name: 'save_speaking_result', description: 'Save the final scores of a finished mock IELTS Speaking test',
     parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'FC', 'LR', 'GRA', 'P'] } },
+  { name: 'save_drill', description: 'Save the result of a finished [REFLEX] drill',
+    parameters: { type: 'OBJECT', properties: { unit: { type: 'STRING' }, correct: { type: 'NUMBER' }, total: { type: 'NUMBER' } }, required: ['correct', 'total'] } },
 ] }];
 const WORKLET = "class P extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}}registerProcessor('p',P)";
 const b64 = buf => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -889,6 +957,7 @@ You hear their real voice, so also notice pronunciation — final consonants, -s
 Corrections are light, like a friend: at most one per turn and only when it matters or keeps repeating — say how a native would put it, then carry on.
 Now and then steer toward common IELTS Speaking topics (${TOPICS}).
 When they ask for a mock Speaking test (or say "[SPEAKING]"), run it like a real examiner: Part 1 (4 questions), Part 2 (read the cue card aloud, give them one minute to prepare, then let them talk for 1–2 minutes without interrupting), Part 3 (4 questions). No feedback during the test. Then tell them their band for Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation and overall, plus 3 things to fix, and call save_speaking_result.
+When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train instant speaking without translating in their head: fire ONE short prompt at a time and keep the pace FAST; they should answer with one natural sentence within about 3 seconds; never explain at length. If they hesitate, stall or answer in Vietnamese, give the natural answer in one breath, make them say it once, then fire the next prompt. Mix these as the unit's focus suggests: quick-fire personal questions; instant translation (you may say a short Vietnamese line, they say it in English); situation reactions ("Your boss just moved the deadline to today — reply!"); shadowing (they repeat your native line with the same rhythm); chains (you twist a follow-up on their answer). Do 12–15 prompts, then a short verdict: how many they nailed out of the total, which prompt type was slowest, 3 phrases to keep — and call save_drill with unit, correct and total. The app measures their reaction time itself.
 After a few minutes, and whenever your picture of them changes, call save_profile (band in 0.5 steps; weak: up to 6 short items in Vietnamese with full diacritics; note: one short Vietnamese sentence). Never mention these functions out loud.
 Recent conversation for context:
 ${recent || '(none yet)'}
@@ -896,8 +965,12 @@ Remember: speak ONLY English, even when they speak Vietnamese.`;
 }
 
 function callUI(state, msg) {
+  const L = live, was = $('#call').dataset.st;
+  if (L?.drill && state === 'listening' && was !== 'listening') { L.tListen = performance.now(); L.armed = true; L.loud = 0; } // bắt đầu bấm giờ phản xạ
+  if (L?.drill && state === 'speaking') L.armed = false;
   $('#call').dataset.st = state;
-  const st = { idle: '', connecting: 'Đang kết nối…', listening: '🎤 Sam đang nghe bạn…', speaking: '🔊 Sam đang nói… (cứ nói để chen ngang)' }[state];
+  const rx = L?.reacts?.length ? `⚡ vừa rồi ${(L.reacts.at(-1) / 1000).toFixed(1)} s · TB ${(L.reacts.reduce((a, b) => a + b, 0) / L.reacts.length / 1000).toFixed(1)} s` : '';
+  const st = { idle: '', connecting: 'Đang kết nối…', listening: L?.drill ? `⚡ Nói ngay! ${rx}` : '🎤 Sam đang nghe bạn…', speaking: '🔊 Sam đang nói… (cứ nói để chen ngang)' }[state];
   $('#callStatus').textContent = msg || st || '';
   $('#callAva').className = state === 'listening' || state === 'speaking' ? state : '';
   $('#callIdle').hidden = state !== 'idle';
@@ -919,7 +992,7 @@ function flush(L) {
 async function callStart(firstText) {
   if (live) return;
   if (!key) { $('#set').showModal(); return; }
-  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false };
+  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill: pendingDrill, reacts: [], loud: 0 }; pendingDrill = null;
   callUI('connecting');
   if (window.Avatar) await Avatar.start(() => live === L && callUI('listening')); $('#callYou').textContent = ''; $('#callSam').textContent = '';
   try {
@@ -932,6 +1005,10 @@ async function callStart(firstText) {
   let buf = [];
   node.port.onmessage = e => { // gom ~100ms mẫu 16kHz → PCM 16-bit → gửi
     if (!L.ready || L.muted) return;
+    if (L.armed) { // bài phản xạ: lúc Sam nói xong → khúc micro đầu tiên có tiếng người (3 khúc liền nhau đủ to)
+      L.loud = voiceLevel(e.data) > 0.03 ? L.loud + 1 : 0;
+      if (L.loud >= 3) { L.armed = false; const ms = performance.now() - L.tListen - 24; if (ms > 150 && ms < 15000) { L.reacts.push(ms); callUI('listening'); } }
+    }
     buf.push(e.data);
     if (buf.length < 13) return;
     const n = buf.reduce((s, a) => s + a.length, 0), pcm = new Int16Array(n); let o = 0;
@@ -968,6 +1045,7 @@ function onLive(L, m, firstText) {
       if (f.name === 'save_profile' && (callMode === 'learn' || callMode === 'roast')) applyProfile(f.args || {}, false);
       if (f.name === 'save_memory' && callMode !== 'learn') addNotes(f.args?.notes);
       if (f.name === 'save_speaking_result') saveExam('Speaking', f.args || {});
+      if (f.name === 'save_drill' && L.drill) saveDrill(L, f.args || {});
     } catch {}
     L.ws.send(JSON.stringify({ toolResponse: { functionResponses: fs.map(f => ({ id: f.id, name: f.name, response: { ok: true } })) } }));
     return;
@@ -1006,8 +1084,19 @@ function playPcm(L, data) {
 }
 function stopPlayback(L) { window.Avatar?.active && Avatar.interrupt(); for (const s of L.sources) try { s.stop(); } catch {} L.sources = []; L.next = 0; }
 
+function saveDrill(L, a) {
+  const id = unitById(a.unit) ? a.unit : L.drill, n = Math.max(0, Math.min(10, Math.round(10 * Number(a.correct) / (Number(a.total) || 12))));
+  if (unitById(id) && !isNaN(n)) { scores[id] = { score: n, date: today() }; store('ie_scores', scores); }
+  L.saved = true;
+}
+function logDrill(L) {
+  if (!L.drill || !L.reacts.length || L.logged) return; L.logged = true;
+  const avg = Math.round(L.reacts.reduce((a, b) => a + b, 0) / L.reacts.length);
+  reflexLog = [...reflexLog, { date: today(), unit: L.drill, avg, n: L.reacts.length }].slice(-200); store('gs_reflex', reflexLog);
+}
 function callEnd(L, msg) {
   if (!L) return;
+  logDrill(L);
   if (live === L) live = null;
   try { L.ws?.close(1000); } catch {}
   L.stream?.getTracks().forEach(t => t.stop());

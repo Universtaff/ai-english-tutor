@@ -18,6 +18,7 @@
 | A-drill | Prompt chế độ Học (gọi + chat chữ) chứa PHRASE DRILL: phản ứng hài, câu đúng theo ngữ cảnh, bắt nói lại |
 | A-roast | Chế độ Cục súc: prompt gọi + chat có vai cục súc, bắt nói lại, giới hạn an toàn, nạp câu từng sai |
 | A-road2 | Lộ trình G/V: 40+40 bài id không trùng, prompt đúng loại bài (G/V/IELTS), sổ từ Leitner (chống trùng, hẹn ngày, lên/xuống hộp), 3 tab dựng được, nút ≥ 40px |
+| A-reflex | 30 bài phản xạ; prompt gọi (Học + Cục súc) có REFLEX DRILL; tool save_drill chấm điểm 0–10; nhật ký phản xạ lưu trung bình ms; hàm đo độ to micro; thẻ Hôm nay có 5 việc; tab dưới tên Lộ trình |
 | A-lang | Luật "chỉ nói tiếng Anh" có trong lời dặn; `FOREIGN` bắt đúng; |
 | A-chat | Dòng 💡 ✏️ 🗣 có kiểu riêng; tab IELTS và Cài đặt mở được |
 | A-console | Không lỗi console/exception cả phiên |
