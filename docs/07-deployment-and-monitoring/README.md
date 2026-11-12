@@ -5,7 +5,7 @@
 2. **Tăng `gia-su-vNN` trong `sw.js`** (không thì điện thoại giữ bản cũ).
 3. Thay tài nguyên (video/ảnh/glb) → đổi `?v=` trong đường dẫn nạp để phá cache điện thoại.
 4. `node tools/qa.mjs` phải xanh.
-5. `git push` lên `main` → GitHub Pages tự dựng (≈ 1 phút). Địa chỉ: `https://davidlee2199.github.io/gia-su-tieng-anh/`.
+5. `git push` lên `main` → GitHub Pages tự dựng (≈ 1 phút). Địa chỉ: `https://universtaff.github.io/english-tutor/`.
 
 ## Xác nhận sau khi đẩy
 - `curl .../sw.js` thấy đúng số `gia-su-vNN`.
