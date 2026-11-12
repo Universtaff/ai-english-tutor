@@ -1,6 +1,6 @@
-# English Tutor · Gia sư tiếng Anh
+# AI English Tutor · Gia sư tiếng Anh
 
-**▶ Dùng thử / Try it:** https://universtaff.github.io/english-tutor/
+**▶ Dùng thử / Try it:** https://universtaff.github.io/ai-english-tutor/
 
 ## Tiếng Việt
 
