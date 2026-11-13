@@ -2,6 +2,22 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-13 · v58 — kiểm toàn app + vá lỗi
+
+- Bấm Kết thúc lúc đang kết nối: micro, kết nối Gemini và khoá màn hình được nhả ngay (trước đây micro vẫn mở sau khi tắt).
+- Bài phản xạ bị chặn (chưa có khoá / đang trong cuộc gọi khác) không còn dính sang cuộc gọi sau.
+- "Xoá hết dữ liệu" xoá sạch cả sổ từ, nhật ký phản xạ, trí nhớ Tâm sự/Cục súc/HSK3 (trước đây lần ghi sau lưu lại dữ liệu cũ).
+- Tiết kiệm pin: màn gọi ẩn (đang nhắn tin / xem lộ trình) thì dừng vẽ 3D và video nền.
+- HeadAudio khoá ở bản 1.0.0 (trước trỏ `@main`, mã đã tự đổi ngày 10/11 mà chưa qua kiểm).
+- Service worker xoá cache các phiên bản cũ.
+- Giao diện: nút Gọi trên đầu đủ tương phản (chữ trắng trên xanh đậm), tin nhắn trên màn rộng không kéo dài quá 640 px, nút "IELTS" ở màn gọi đổi thành "Lộ trình" cho khớp tab, mở lần đầu thì Cài đặt điền sẵn model, chữ nhỏ nhất 12 px.
+- Mic chat: trình duyệt từ chối nghe thì nút mic không kẹt đỏ; thông báo thử lại không còn hiện "5/4".
+- QA thêm 5 mục (55 mục): khoá phiên bản CDN, dọn cache SW, tắt máy lúc kết nối, ẩn màn gọi, xoá dữ liệu.
+
+## 2026-10-16 → 2026-11-05 · v45–v57
+
+- HSK3 (chuẩn HSK 3.0), phrase drill, chế độ Cục súc (giọng Mỹ đường phố, chửi song ngữ), lộ trình Ngữ pháp + Từ vựng với sổ từ Leitner, Phản xạ 30 bài + thẻ Hôm nay, tiết kiệm pin khi chạy nền, avatar chụp từ chính nhân vật 3D.
+
 ## 2026-10-12
 
 - QA

@@ -42,6 +42,9 @@ check(!noSpec.length && !ghost.length, 'đặc tả docs/ đủ 8 phần, không
 const dirty = sh('git status --porcelain').split('\n').filter(Boolean).map(l => l.slice(3)), core = dirty.filter(f => /^(index\.html|xianxia\.mjs|mocap\.mjs|sam\.glb|bg\/)/.test(f));
 check(!core.length || dirty.includes('sw.js'), 'sw.js đã tăng phiên bản khi đổi mã/nội dung', 'đổi ' + core.slice(0, 3).join(', ') + ' mà chưa tăng gia-su-vNN');
 const ahead = sh('git log origin/main..HEAD --oneline'); ahead ? warn('có commit chưa đẩy', ahead.split('\n').length + ' commit') : ok('mọi commit đã đẩy');
+const branch = [...html.matchAll(/cdn\.jsdelivr\.net\/(?:gh|npm)\/[^"'`\s]+?@(?:main|master|latest)\//g)].map(m => m[0]);
+check(!branch.length, 'mã nạp từ CDN khoá đúng phiên bản (không @main/@master/@latest)', branch.join(', '));
+check(/addEventListener\('activate'[\s\S]*caches\.delete/.test(read('sw.js')), 'service worker xoá cache phiên bản cũ khi kích hoạt');
 const sw = read('sw.js').match(/gia-su-v(\d+)/)?.[1]; const sw0 = sh('git show HEAD:sw.js').match(/gia-su-v(\d+)/)?.[1]; if (sw && sw0 && +sw < +sw0) bad('sw.js lùi phiên bản', `${sw0} → ${sw}`);
 
 // ───────── QC: chạy thật ─────────
@@ -53,7 +56,7 @@ const srv = http.createServer((q, r) => {
   else { r.writeHead(200, { ...h, 'content-length': s.size }); fs.createReadStream(p).pipe(r); }
 }).listen(PORT);
 for (const d of fs.readdirSync(path.dirname(PROFILE)).filter(d => /^chrome-qa-\d+$/.test(d))) try { fs.rmSync(path.join(path.dirname(PROFILE), d), { recursive: true, force: true }); } catch {} // dọn hồ sơ các lần chạy trước (hồ sơ mỗi lần một thư mục riêng để khỏi vướng khoá)
-const chrome = spawn(CHROME, ['--headless=new', `--user-data-dir=${PROFILE}`, `--remote-debugging-port=${DBG}`, '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', 'about:blank'], { stdio: 'ignore' });
+const chrome = spawn(CHROME, ['--headless=new', `--user-data-dir=${PROFILE}`, `--remote-debugging-port=${DBG}`, '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', 'about:blank'], { stdio: 'ignore' });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let page; for (let i = 0; i < 40 && !page; i++) { await sleep(500); try { page = (await (await fetch(`http://localhost:${DBG}/json/list`)).json()).find(t => t.type === 'page'); } catch {} }
 const finish = async () => {
@@ -211,6 +214,37 @@ const bgx = await ev(`(async()=>{const r=[];const vids=[];window.Avatar.head.sce
   Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));await new Promise(z=>setTimeout(z,1500));delete document.hidden;
   if(vids.length&&!vids.some(v=>!v.paused))r.push('mở lại app mà video nền không phát lại');return r})()`);
 check(!bgx?.length, 'tiết kiệm pin: ẩn app dừng video nền + vẽ 3D, mở lại thì chạy tiếp', Array.isArray(bgx) ? bgx.join('; ') : JSON.stringify(bgx));
+// Bấm Kết thúc trong lúc đang xin micro → micro phải được nhả; bài phản xạ bị chặn (chưa có khoá) không được dính sang cuộc gọi sau.
+const hu = await ev(`(async()=>{const r=[],WS=window.WebSocket,md=navigator.mediaDevices,gum=md.getUserMedia.bind(md),streams=[];
+  window.WebSocket=class{constructor(){this.readyState=0}send(){}close(){}};
+  md.getUserMedia=async c=>{const s=await gum(c);streams.push(s);callEnd(live);return s}; // người dùng tắt máy đúng lúc micro vừa mở
+  document.getElementById('call').hidden=false;await callStart();await new Promise(z=>setTimeout(z,300));
+  if(live)r.push('vẫn còn cuộc gọi sau khi tắt');if(!streams.length)r.push('không mô phỏng được micro');
+  if(streams.some(s=>s.getTracks().some(t=>t.readyState!=='ended')))r.push('tắt lúc đang kết nối mà micro vẫn mở');
+  md.getUserMedia=gum;const wd=Object.getOwnPropertyDescriptor(Navigator.prototype,'wakeLock');let st2=null; // tắt máy ở bước cuối (xin khoá màn hình): micro + âm thanh đã mở, nhả 2 lần không được văng lỗi
+  Object.defineProperty(navigator,'wakeLock',{configurable:true,get:()=>({request:async()=>{st2=live?.stream;callEnd(live);return {release(){}}}})});
+  await callStart();await new Promise(z=>setTimeout(z,500));delete navigator.wakeLock;if(wd)Object.defineProperty(Navigator.prototype,'wakeLock',wd);
+  if(live)r.push('tắt ở bước cuối mà vẫn còn cuộc gọi');if(!st2)r.push('không tới được bước khoá màn hình');else if(st2.getTracks().some(t=>t.readyState!=='ended'))r.push('tắt ở bước cuối mà micro vẫn mở');
+  const k=key;key='';startDrill('R1-01');document.getElementById('set').close();key=k;
+  await callStart();if(live?.drill)r.push('bài phản xạ bị chặn dính sang cuộc gọi sau: '+live.drill);callEnd(live);
+  window.WebSocket=WS;return r})()`);
+check(!hu?.length, 'gọi: tắt lúc đang kết nối thì nhả micro · bài phản xạ không dính sang cuộc gọi sau', Array.isArray(hu) ? hu.join('; ') : JSON.stringify(hu));
+// Màn gọi ẩn (đang ở tab chat/lộ trình) → dừng vẽ 3D + video nền; hiện lại thì chạy tiếp.
+const so = await ev(`(async()=>{const r=[],h=Avatar.head,vids=[],c=document.getElementById('call');h.scene.traverse(o=>{const v=o.material?.map?.image;if(v instanceof HTMLVideoElement&&!vids.includes(v))vids.push(v)});
+  c.hidden=true;await new Promise(z=>setTimeout(z,300));
+  if(h.isRunning)r.push('ẩn màn gọi mà vẫn vẽ 3D');if(vids.some(v=>!v.paused))r.push('ẩn màn gọi mà video nền vẫn chạy');
+  c.hidden=false;await new Promise(z=>setTimeout(z,1500));
+  if(!h.isRunning)r.push('hiện lại màn gọi mà không vẽ 3D');if(vids.length&&!vids.some(v=>!v.paused))r.push('hiện lại màn gọi mà video nền không chạy');return r})()`);
+check(!so?.length, 'tiết kiệm pin: ẩn màn gọi dừng vẽ 3D + video nền, hiện lại thì chạy tiếp', Array.isArray(so) ? so.join('; ') : JSON.stringify(so));
+// "Xoá hết dữ liệu" phải xoá cả bản trong bộ nhớ: ghi lần sau không được lưu lại dữ liệu cũ.
+const rs = await ev(`(()=>{const r=[],cf=window.confirm,bk={};for(const k of Object.keys(localStorage))bk[k]=localStorage.getItem(k);
+  addVocab(['qaword = thử']);mem=['qa note'];store('gs_mem',mem);reflexLog=[{date:today(),unit:'R1-01',avg:1000,n:1}];store('gs_reflex',reflexLog);
+  window.confirm=()=>true;document.getElementById('reset').click();window.confirm=cf;
+  if(vocab.length||mem.length||reflexLog.length||phrMem.length||hskMem.length)r.push('còn dữ liệu trong bộ nhớ sau khi xoá');
+  addVocab(['newword = mới']);const v=JSON.parse(localStorage.getItem('gs_vocab')||'[]');if(v.length!==1)r.push('ghi lần sau lưu lại từ cũ ('+v.length+' từ)');
+  if(localStorage.getItem('gs_key')===null)r.push('xoá mất khoá API');
+  localStorage.clear();for(const k in bk)localStorage.setItem(k,bk[k]);vocab=load('gs_vocab',[]);mem=load('gs_mem',[]);reflexLog=load('gs_reflex',[]);return r})()`);
+check(!rs?.length, 'Xoá hết dữ liệu: xoá cả trong bộ nhớ, giữ khoá API', Array.isArray(rs) ? rs.join('; ') : JSON.stringify(rs));
 check(!zh?.length, 'chế độ HSK3: dạy tiếng Trung · cho phép chữ Hán · nạp tiến độ', Array.isArray(zh) ? zh.join('; ') : JSON.stringify(zh));
 const ci = await ev(`(()=>{document.querySelector('nav button[data-view=vRoad]').click();const k=document.getElementById('road').children.length;document.querySelector('nav button[data-view=vChat]').click();document.getElementById('openSet').click();const d=document.getElementById('set').open;document.getElementById('set').close();return {k,d}})()`);
 check(ci?.k > 2 && ci?.d, 'tab IELTS dựng được, hộp Cài đặt mở được', JSON.stringify(ci));

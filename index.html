@@ -27,7 +27,7 @@
   header .ava { width:40px; height:40px; border-radius:50%; border:2px solid #ffffffcc; object-fit:cover; }
   header h1 { font-size:17px; margin:0; flex:1; min-width:0; line-height:1.25; }
   header h1 small { display:block; font-size:12px; font-weight:400; opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #callBtn { display:flex; align-items:center; gap:5px; background:#22c55e; border:0; color:#fff; border-radius:99px; min-height:40px; padding:0 14px 0 12px; font-weight:700; font-size:14px; box-shadow:0 2px 8px #22c55e55; }
+  #callBtn { display:flex; align-items:center; gap:5px; background:#15803d; border:0; color:#fff; border-radius:99px; min-height:40px; padding:0 14px 0 12px; font-weight:700; font-size:14px; box-shadow:0 2px 8px #15803d55; }
   #callBtn .ic { width:16px; height:16px; }
   #level { background:#ffffff1f; color:#fff; border:1px solid #ffffff4d; border-radius:99px; min-height:40px; padding:0 13px; font-weight:700; font-size:13px; white-space:nowrap; }
   #openSet { background:none; border:0; color:#fff; width:44px; height:44px; padding:0; display:grid; place-items:center; }
@@ -38,7 +38,7 @@
   .view { flex:1; display:flex; flex-direction:column; min-height:0; }
 
   #chat { flex:1; overflow-y:auto; padding:12px 12px 18px; }
-  .msg { max-width:86%; margin:8px 0; padding:10px 13px; border-radius:18px; white-space:pre-wrap; word-wrap:break-word; }
+  .msg { max-width:min(86%,640px); margin:8px 0; padding:10px 13px; border-radius:18px; white-space:pre-wrap; word-wrap:break-word; }
   .ai { background:var(--ai); border:1px solid var(--line); border-bottom-left-radius:6px; box-shadow:0 1px 3px #3b0a1f0d; }
   .me { background:var(--me); margin-left:auto; border-bottom-right-radius:6px; }
   .cmd { margin:12px auto; text-align:center; color:var(--mute); font-size:13px; }
@@ -90,7 +90,7 @@
   .row { display:flex; gap:8px; margin-top:16px; }
   .row button { flex:1; padding:11px; border-radius:12px; border:1px solid var(--main); background:#fff; color:var(--main); font-weight:600; }
   .row button.pri { background:linear-gradient(135deg,var(--main),var(--main-d)); color:#fff; border-color:transparent; }
-  .credit { font-size:11.5px; color:var(--mute); margin:14px 0 0; }
+  .credit { font-size:12px; color:var(--mute); margin:14px 0 0; }
 
   /* Màn gọi kiểu FaceTime: Sam 3D phủ cả màn, điều khiển nổi trên nền kính mờ */
   #call { position:fixed; inset:0; z-index:10; background:radial-gradient(120% 80% at 50% 0%,#5b1a4a,#1e1033 55%,#0d0a18); color:#fff;
@@ -130,7 +130,7 @@
   #call[data-st=connecting] #samChip .dot { background:#facc15; }
   #sceneWrap { position:relative; }
   #scenePanel { position:absolute; top:46px; right:0; width:min(320px,calc(100vw - 24px)); border-radius:18px; padding:6px 14px 12px; text-align:left; }
-  #scenePanel h4 { margin:10px 0 6px; font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; opacity:.75; }
+  #scenePanel h4 { margin:10px 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.07em; opacity:.75; }
   #segMode2 { padding:6px 12px; background:#fff; border-top:1px solid var(--line); } #segMode2 button { min-height:40px; padding:6px 14px; font-size:14px; border:1px solid var(--line); background:#fff; color:var(--mute); } #segMode2 button.on { background:var(--me); color:var(--main); border-color:var(--main); }
   #segMode { justify-content:center; margin-top:6px; } #segMode button:not(.on) { background:#3b103080; } #segMode button { min-height:44px; padding:8px 16px; font-size:14px; }
   #call[data-st]:not([data-st=idle]) #segMode { display:none; }
@@ -176,7 +176,7 @@
   <div class="callBtns" id="callIdle">
     <button class="cb" id="callText"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></i>Nhắn tin</button>
     <button class="cb go" id="callGo"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></i>Gọi Sam</button>
-    <button class="cb" id="callRoad"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></i>IELTS</button>
+    <button class="cb" id="callRoad"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></i>Lộ trình</button>
   </div>
   <div class="callBtns" id="callLive" hidden>
     <button class="cb" id="callMute"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></i><span>Tắt mic</span></button>
@@ -412,12 +412,11 @@ const EXTRA = [...GRAMMAR, ...VOCAB, ...REFLEX];
 // Nhật ký phản xạ: mỗi buổi luyện lưu thời gian từ lúc Sam nói xong tới lúc bạn bắt đầu nói (đo bằng micro).
 let reflexLog = load('gs_reflex', []); // {date, unit, avg, n}
 const voiceLevel = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); }; // độ to (RMS) một khúc mẫu micro
-let pendingDrill = null;
 function startDrill(id) {
   const u = unitById(id); if (!u) return;
   if (callMode === 'chat' || callMode === 'zh') setCallMode('learn');
-  unit = id; store('ie_unit', unit); pendingDrill = id; $('#call').hidden = false;
-  callStart(`[REFLEX ${id}] Start the reflex drill "${u.t}" now — focus: ${u.d}.`);
+  unit = id; store('ie_unit', unit); $('#call').hidden = false;
+  callStart(`[REFLEX ${id}] Start the reflex drill "${u.t}" now — focus: ${u.d}.`, id);
 }
 
 // Sổ từ (Leitner): mỗi từ có hộp 0–4, đến hạn sau 1·3·7·14·30 ngày; đúng thì lên hộp, sai thì về hộp 0. Chỉ lưu trên máy.
@@ -804,8 +803,7 @@ async function askAI(onWait) {
       data = await r.json();
     } catch { r = { status: 0, ok: false }; data = {}; }
     if (![0, 500, 503].includes(r.status)) break;
-    onWait(`… Sam đang bận chút, thử lại ${i + 1}/4`);
-    if (i < 4) await new Promise(ok => setTimeout(ok, 2000 * 2 ** Math.min(i, 2)));
+    if (i < 4) { onWait(`… Sam đang bận chút, thử lại ${i + 1}/4`); await new Promise(ok => setTimeout(ok, 2000 * 2 ** Math.min(i, 2))); }
   }
   if (r.status === 503 || r.status === 500) throw new Error('Google đang quá tải, bấm gửi lại sau ít phút.');
   if (r.status === 0) throw new Error('Mất mạng. Kiểm tra wifi/4G rồi gửi lại.');
@@ -867,7 +865,8 @@ if (SR) {
   $('#mic').onclick = () => {
     if ($('#mic').classList.contains('on')) return rec.stop();
     speechSynthesis?.cancel();
-    $('#mic').classList.add('on'); rec.lang = callMode === 'zh' ? 'zh-CN' : 'en-US'; rec.start();
+    $('#mic').classList.add('on'); rec.lang = callMode === 'zh' ? 'zh-CN' : 'en-US';
+    try { rec.start(); } catch { $('#mic').classList.remove('on'); } // trình duyệt từ chối (đang nghe dở…) thì nút không kẹt đỏ
   };
 } else $('#mic').hidden = true;
 
@@ -884,15 +883,17 @@ $('#save').onclick = () => {
   store('gs_key', key); store('gs_model', model); store('gs_about', about); $('#set').close();
 };
 $('#reset').onclick = () => {
-  if (!confirm('Xoá toàn bộ trò chuyện, band, điểm và lịch sử thi thử?')) return;
+  if (!confirm('Xoá toàn bộ trò chuyện, band, điểm, lịch sử thi thử, sổ từ, nhật ký phản xạ và trí nhớ của Sam? (Giữ khoá API và phần giới thiệu bản thân.)')) return;
   profile = { band: '', weak: [], note: '' }; hist = []; scores = {}; tests = []; unit = '';
-  for (const k of Object.keys(localStorage)) if (/^(ie_|gs_(?!key|model|about))/.test(k)) try { localStorage.removeItem(k); } catch {}
+  vocab = []; reflexLog = []; mem = []; phrMem = []; hskMem = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
+  try { for (const k of Object.keys(localStorage)) if (/^(ie_|gs_(?!key|model|about))/.test(k)) localStorage.removeItem(k); } catch {}
+  store('gs_mode', callMode); // giữ chế độ đang chọn
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
 };
 
 function greet() {
   if (callMode !== 'learn') { $('#chat').append(el('div', 'cmd', MODE_INTRO[callMode])); return; }
-  render({ role: 'model', text: "Hey! I'm Sam, your IELTS buddy.\nHow's your day going?\n💡 Cứ nói thoải mái như với bạn bè, bí chữ thì nói tiếng Việt, mình chỉ cách người bản xứ nói. Bấm 📞 Gọi để nói chuyện bằng giọng. Thi thử Speaking, chấm Writing và lộ trình band ở tab 🎯 IELTS." }); }
+  render({ role: 'model', text: "Hey! I'm Sam, your IELTS buddy.\nHow's your day going?\n💡 Cứ nói thoải mái như với bạn bè, bí chữ thì nói tiếng Việt, mình chỉ cách người bản xứ nói. Bấm 📞 Gọi để nói chuyện bằng giọng. Thi thử Speaking, chấm Writing và lộ trình học ở tab 🎯 Lộ trình." }); }
 
 // ===== GỌI THOẠI TRỰC TIẾP (Gemini Live): nghe & nói thời gian thực, giọng có cảm xúc, chen ngang được =====
 // Đo 07/10/2026 với khoá free: kết nối 0,6s, có giọng sau ~2s, gọi hàm save_profile chạy.
@@ -991,18 +992,23 @@ function flush(L) {
   if (s) pushTurn('model', s);
 }
 
-async function callStart(firstText) {
+async function callStart(firstText, drill = null) {
   if (live) return;
   if (!key) { $('#set').showModal(); return; }
-  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill: pendingDrill, reacts: [], loud: 0 }; pendingDrill = null;
+  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0 };
+  const gone = () => live !== L; // bấm Kết thúc trong lúc đang kết nối: mọi thứ mở xong sau đó phải nhả ngay (micro, WebSocket, khoá màn hình)
   callUI('connecting');
-  if (window.Avatar) await Avatar.start(() => live === L && callUI('listening')); $('#callYou').textContent = ''; $('#callSam').textContent = '';
+  if (window.Avatar) await Avatar.start(() => live === L && callUI('listening'));
+  if (gone()) { if (!live) window.Avatar?.stop(); return; }
+  $('#callYou').textContent = ''; $('#callSam').textContent = '';
   try {
     L.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+    if (gone()) return release(L);
     L.inCtx = new AudioContext({ sampleRate: 16000 });
     L.outCtx = new AudioContext({ sampleRate: 24000 });
     await L.inCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' })));
-  } catch (e) { callEnd(L, /Permission|NotAllowed/i.test(e.name + e.message) ? 'Chưa cấp quyền micro.' : 'Không mở được micro: ' + e.message); return; }
+    if (gone()) return release(L);
+  } catch (e) { if (gone()) return release(L); callEnd(L, /Permission|NotAllowed/i.test(e.name + e.message) ? 'Chưa cấp quyền micro.' : 'Không mở được micro: ' + e.message); return; }
   const node = new AudioWorkletNode(L.inCtx, 'p');
   let buf = [];
   node.port.onmessage = e => { // gom ~100ms mẫu 16kHz → PCM 16-bit → gửi
@@ -1029,6 +1035,7 @@ async function callStart(firstText) {
   L.ws.onmessage = async e => onLive(L, JSON.parse(typeof e.data === 'string' ? e.data : await e.data.text()), firstText);
   L.ws.onclose = e => { if (live === L) callEnd(L, e.code === 1000 ? '' : `Mất kết nối (${e.code}${e.reason ? ': ' + e.reason.slice(0, 90) : ''}). Bấm Gọi lại.`); };
   try { L.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  if (gone()) release(L);
 }
 
 // Chữ Trung/Nhật/Hàn/Thái/Nga/Ả Rập… trong lời Sam = lạc tiếng (giọng Anh lơ lớ bị nhận nhầm) → cắt tiếng, nhắc nói lại bằng tiếng Anh
@@ -1096,14 +1103,17 @@ function logDrill(L) {
   const avg = Math.round(L.reacts.reduce((a, b) => a + b, 0) / L.reacts.length);
   reflexLog = [...reflexLog, { date: today(), unit: L.drill, avg, n: L.reacts.length }].slice(-200); store('gs_reflex', reflexLog);
 }
+function release(L) { // nhả micro, âm thanh, kết nối, khoá màn hình của một cuộc gọi
+  try { L.ws?.close(1000); } catch {}
+  L.stream?.getTracks().forEach(t => t.stop());
+  L.inCtx?.close().catch(() => {}); L.outCtx?.close().catch(() => {}); // gọi 2 lần (tắt lúc đang kết nối) thì close() lần 2 trả lỗi bất đồng bộ
+  try { L.wake?.release(); } catch {}
+}
 function callEnd(L, msg) {
   if (!L) return;
   logDrill(L);
   if (live === L) live = null;
-  try { L.ws?.close(1000); } catch {}
-  L.stream?.getTracks().forEach(t => t.stop());
-  try { L.inCtx?.close(); L.outCtx?.close(); } catch {}
-  try { L.wake?.release(); } catch {}
+  release(L);
   window.Avatar?.stop();
   flush(L);
   callUI('idle', msg);
@@ -1126,15 +1136,14 @@ $('#callGo').onclick = () => callStart();
 setTimeout(() => window.Avatar?.init(), 300);
 // Tiết kiệm pin khi không dùng: ẩn app → dừng vòng vẽ 3D; đang gọi mà để chạy nền quá 1 phút → tự tắt cuộc gọi (micro + kết nối Gemini).
 let bgTimer = 0;
+// Vẽ 3D + video nền chỉ khi có người nhìn: đang gọi, hoặc màn gọi đang hiện và app không chạy nền.
+function sceneOn() { window.Avatar?.setActive(!!live || (!document.hidden && !$('#call').hidden)); }
+new MutationObserver(sceneOn).observe($('#call'), { attributes: true, attributeFilter: ['hidden'] });
 document.addEventListener('visibilitychange', () => {
-  const h = window.Avatar?.head;
+  sceneOn();
   if (document.hidden) {
-    if (!live) try { h?.stop?.(); } catch {}
     if (live) bgTimer = setTimeout(() => live && callEnd(live, 'Đã tắt cuộc gọi vì app chạy nền hơn 1 phút (tiết kiệm pin).'), 60000);
-  } else {
-    clearTimeout(bgTimer);
-    try { h?.start?.(); } catch {}
-  }
+  } else clearTimeout(bgTimer);
 }); // tải sẵn nhân vật 3D (~9 MB, lần đầu) khi mở app
 $('#callStop').onclick = () => callEnd(live);
 $('#callExam').onclick = () => live?.ready && live.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '[SPEAKING] Please start a full mock IELTS Speaking test now, Part 1 first.' }] }], turnComplete: true } }));
@@ -1147,17 +1156,17 @@ $('#callAva').onclick = () => live && stopPlayback(live); // chạm ảnh để 
 showLevel();
 setMode(mode);
 if (hist.length) hist.forEach(render); else greet();
-if (!key) $('#set').showModal();
+if (!key) $('#openSet').click(); // mở Cài đặt có điền sẵn model mặc định
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 <script type="module">
 // Mặt Sam 3D: TalkingHead (MIT) dựng nhân vật, HeadAudio (MIT) đọc giọng Gemini Live ra khẩu hình theo thời gian thực.
 // Không tải được (máy yếu, lỗi WebGL) thì Avatar.active = false và cuộc gọi tự phát giọng như cũ, hiện ảnh tĩnh.
 import { TalkingHead } from 'talkinghead';
-import { HeadAudio } from 'https://cdn.jsdelivr.net/gh/met4citizen/HeadAudio@main/dist/headaudio.min.mjs';
+import { HeadAudio } from 'https://cdn.jsdelivr.net/gh/met4citizen/HeadAudio@1.0.0/dist/headaudio.min.mjs';
 import { buildXianxia, PHASES, phaseByClock, WEATHERS, realWeather, REGIONS, SEASONS, seasonOf } from './xianxia.mjs';
 import { playMocap, preloadMocap } from './mocap.mjs';
-const HA = 'https://cdn.jsdelivr.net/gh/met4citizen/HeadAudio@main/dist/';
+const HA = 'https://cdn.jsdelivr.net/gh/met4citizen/HeadAudio@1.0.0/dist/';
 const GLB = 'sam.glb?v=mai-ngang'; // đổi ?v= mỗi lần xuất lại để điện thoại không giữ bản cũ · nhân vật David tự nặn trong VRoid (tools/sam-david.vrm), chuyển bằng tools/vroid-to-talkinghead-giu-mau.py
 let head = null, ha = null, loading = null;
 
@@ -1256,6 +1265,7 @@ window.Avatar = {
       } catch (e) { console.warn('xianxia', e); }
       Object.assign(head.controls, { enableRotate: true, minPolarAngle: 1.25, maxPolarAngle: 1.62, rotateSpeed: .6 }); // kéo để xoay 360°; nghiêng vừa đủ để không lộ mép trên/dưới của vòm tranh (±26°)
       node.classList.add('ready'); document.getElementById('call').classList.add('has3d');
+      window.sceneOn?.(); // nạp xong lúc đang ở tab chat thì dừng vẽ ngay
       idleCute();
       preloadMocap(head, ['bye_feminine_001', 'bow_feminine_001', 'guide_feminine_001', 'respond_normal_001']);
       return true;
@@ -1282,6 +1292,7 @@ window.Avatar = {
   end() { try { head.streamNotifyEnd(); } catch {} },
   interrupt() { try { head.streamInterrupt(); } catch {} },
   stop() { if (head) try { head.streamStop(); } catch {} this.active = false; },
+  setActive(on) { if (!head) return; try { on ? head.start() : head.stop(); } catch {} window.samEnv?.userData.setActive?.(on); }, // dừng/chạy vòng vẽ 3D + video nền
   get head() { return head; }, get ha() { return ha; }, // để soi lỗi
   // Gọi mỗi khi có thêm chữ Sam nói: bắt từ khoá để làm cử chỉ ngay lúc đang nói.
   react(text) {

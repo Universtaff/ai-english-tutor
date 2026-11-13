@@ -12,7 +12,7 @@
 | `tools/` | Script dựng/tái tạo tài nguyên + `qa.mjs` |
 
 ## Nhân vật & máy quay
-TalkingHead 1.7 + HeadAudio (visemes) trên three@0.180 (importmap). Máy quay: view `mid`, fov 35, `cameraDistance -6.08`. `modelPixelRatio = min(1, 1.5/devicePixelRatio)` (đây là thứ giữ 60 fps). Đèn: ambient 0.9, directional 3 (đổi theo buổi). Camera nghiêng giới hạn polar 1.25–1.62 để không lộ mép vòm.
+TalkingHead 1.7 + HeadAudio **@1.0.0** (visemes, khoá đúng phiên bản — không dùng `@main`, nhánh đó đổi mã bất cứ lúc nào) trên three@0.180 (importmap). Máy quay: view `mid`, fov 35, `cameraDistance -6.08`. `modelPixelRatio = min(1, 1.5/devicePixelRatio)` (đây là thứ giữ 60 fps). Đèn: ambient 0.9, directional 3 (đổi theo buổi). Camera nghiêng giới hạn polar 1.25–1.62 để không lộ mép vòm.
 
 ## Vòm nền
 4 bản trụ R = 600, mỗi bản 90°, lật gương xen kẽ (nối liền mép); bản phía sau lưng Sam đọc đúng chiều. Mỗi bản dùng video (VideoTexture) nếu có, không thì tranh tĩnh theo buổi. Cảnh mới hiện dần đè lên cảnh cũ (2,5 s). Video quay ban ngày → chiều/đêm ám màu (`PHASE_MUL`).
@@ -72,3 +72,5 @@ Khung đặt bằng `head.setView('full', {cameraDistance, cameraY, cameraRotate
 ### Tiết kiệm pin khi chạy nền
 
 Khi app bị ẩn (`visibilitychange`): dừng mọi video nền (`xianxia.mjs`), dừng vòng vẽ TalkingHead (`head.stop()`), bỏ qua hẹn giờ cập nhật cảnh và thời tiết; nếu đang gọi thì sau 60 s chạy nền tự tắt cuộc gọi (micro + WebSocket Gemini). Mở lại app: phát lại video đang dùng, `head.start()`, cập nhật cảnh và thời tiết ngay.
+
+Cùng luật khi **màn gọi bị ẩn** (đang ở tab Nói chuyện / Lộ trình, không có cuộc gọi): `sceneOn()` dừng vòng vẽ TalkingHead và video nền (`Avatar.setActive(false)` → `env.userData.setActive`); mở lại màn gọi thì chạy tiếp. Đang gọi thì luôn vẽ.

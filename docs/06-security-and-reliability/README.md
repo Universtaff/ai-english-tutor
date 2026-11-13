@@ -4,7 +4,10 @@
 - Khoá Gemini chỉ ở `localStorage` của máy người dùng; **không** có trong mã, commit, hay URL chia sẻ.
 - Repo công khai: `tools/qa.mjs` quét khoá (`AIza…`, `sk-…`, khoá riêng) và email nội bộ.
 - Mô tả cá nhân người dùng (`gs_about`) chỉ nằm trên máy.
-- Không bật micro khi chưa bấm Gọi; kết thúc gọi thì giải phóng micro + khoá màn hình.
+- Không bật micro khi chưa bấm Gọi; kết thúc gọi thì giải phóng micro + khoá màn hình — kể cả khi bấm Kết thúc lúc đang kết nối (micro/WebSocket mở xong sau đó phải được nhả ngay).
+- "Xoá hết dữ liệu" xoá cả trong bộ nhớ lẫn `localStorage`: trò chuyện, band, điểm, thi thử, sổ từ, nhật ký phản xạ, trí nhớ Tâm sự/Cục súc/HSK3. Chỉ giữ khoá API, model, phần "Sam nên biết gì về bạn" và chế độ đang chọn.
+- Mã chạy từ CDN phải khoá đúng phiên bản (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0); không trỏ vào nhánh (`@main`).
+- Service worker xoá cache của phiên bản cũ khi phiên bản mới kích hoạt.
 
 ## Giấy phép
 | Tài nguyên | Giấy phép | Cách dùng |
