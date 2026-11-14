@@ -2,6 +2,14 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-14 · v60 — chứng chỉ cho khách hệ sinh thái PH
+
+- Tab "🎯 Kỳ thi": chọn IELTS Academic / IELTS General / TOEFL 2026 / PTE / Duolingo English Test / Phỏng vấn quốc tịch Mỹ; thi thử chạy đúng dạng bài kỳ thi đó, điểm dạng khoảng ước lượng.
+- Bảng "cần bao nhiêu điểm cho đích đến": Canada CLB, Úc (Competent/Proficient/Superior, 482), Anh B2, Đức (Chancenkarte, Ausbildung), Mỹ, mức trường thường gặp — dòng chưa kiểm chứng có cảnh báo.
+- Cuộc gọi có thẻ đề + đồng hồ thi (chuẩn bị → nói, hết giờ Sam cắt); bài đọc to / nhắc lại được app đo % số từ khớp.
+- Phỏng vấn quốc tịch Mỹ: 128 câu civics 2025 của USCIS (hỏi 20, đạt 12) + đọc/viết.
+- Ngôn ngữ thứ hai: Đức (Goethe A1–B1), Hàn (TOPIK/EPS-TOPIK), Nhật (JLPT/JFT), Đài (TOCFL) bên cạnh HSK3 — bấm lại nút ngôn ngữ để đổi.
+
 ## 2026-11-14 · v59 — nâng cấp đợt 1 theo nghiên cứu đối thủ
 
 - Gọi không đứt ở phút ~10: bật nối lại phiên + nén ngữ cảnh của Gemini Live; nhận goAway hoặc rớt mạng thì tự nối lại (chờ 1,5 s, tối đa 3 lần liền), giữ micro, avatar, lời thoại, không chào lại. Hết lượt free thì không cố nối lại mà báo giờ hồi lượt.

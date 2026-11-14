@@ -8,6 +8,8 @@
 - "Xoá hết dữ liệu" xoá cả trong bộ nhớ lẫn `localStorage`: trò chuyện, band, điểm, thi thử, sổ từ, nhật ký phản xạ, trí nhớ Tâm sự/Cục súc/HSK3. Chỉ giữ khoá API, model, phần "Sam nên biết gì về bạn" và chế độ đang chọn.
 - Mã chạy từ CDN phải khoá đúng phiên bản (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0); không trỏ vào nhánh (`@main`).
 - Service worker xoá cache của phiên bản cũ khi phiên bản mới kích hoạt.
+- Đề thi: Sam chỉ tả khuôn đề và tự soạn câu hỏi cùng dạng; KHÔNG chép câu hỏi, bài mẫu, bảng tiêu chí nguyên văn của ETS/Pearson/Duolingo/Cambridge vào repo công khai. Bộ civics USCIS là tài liệu công của chính phủ Mỹ nên được chép, có ghi nguồn.
+- Mọi điểm của kỳ thi khác IELTS hiện dạng khoảng và ghi rõ là ước lượng của Sam, không phải điểm chính thức.
 
 ## Giấy phép
 | Tài nguyên | Giấy phép | Cách dùng |

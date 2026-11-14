@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#6e1230">
 <title>Sam · luyện IELTS</title>
 <link rel="manifest" href="manifest.json">
+<script src="data/targets.js"></script><script src="data/exams.js"></script><script src="data/langs.js"></script><script src="data/us-civics.js"></script>
 <link rel="icon" href="sam-192.png">
 <script type="importmap">{"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js/+esm",
@@ -142,6 +143,9 @@
   #kvSel { width:100%; border:1px solid #ffffff33; background:#ffffff14; color:#fff; border-radius:12px; padding:8px 10px; font:inherit; font-size:14px; font-weight:600; }
   #kvSel option { color:#000; }
   #seasonNote { margin:10px 0 0; font-size:12.5px; opacity:.8; }
+  #call > #examCard { position:absolute; z-index:3; top:calc(64px + env(safe-area-inset-top)); left:12px; right:12px; max-height:42vh; overflow:auto; border-radius:16px; padding:10px 14px; text-align:left; }
+  #examCard p { margin:6px 0; font-size:16px; line-height:1.45; } #ecTimer { font-weight:700; font-size:15px; color:#fde68a; }
+  #road select { width:100%; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:8px 10px; font:inherit; background:#fff; color:var(--ink); }
   #call > #dragHint { position:absolute; top:42%; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:99px; font-size:13.5px; pointer-events:none; animation:fadeout 6.5s forwards; }
   @keyframes fadeout { 0%,75% { opacity:1; } 100% { opacity:0; } }
 </style>
@@ -168,13 +172,14 @@
       </div>
     </div>
   </div>
+  <div id="examCard" class="glass" hidden><b id="ecTitle"></b><p id="ecText"></p><div id="ecTimer"></div></div>
   <div id="dragHint" class="glass" hidden>👆 Kéo màn hình để xoay 360°</div>
   <img id="callAva" src="sam-512.png" alt="Sam">
   <h2>Sam</h2>
   <div id="callStatus" class="glass"></div>
   <div class="cap glass" id="callYou"></div>
   <div class="cap glass" id="callSam"></div>
-  <div class="seg" id="segMode" role="group" aria-label="Chế độ gọi"><button data-m="learn">📚 Học</button><button data-m="chat">💬 Tâm sự</button><button data-m="roast">😈 Cục súc</button><button data-m="zh">🀄 HSK3</button></div>
+  <div class="seg" id="segMode" role="group" aria-label="Chế độ gọi"><button data-m="learn">📚 Học</button><button data-m="chat">💬 Tâm sự</button><button data-m="roast">😈 Cục súc</button><button data-m="zh" class="l2b">🀄 HSK3</button></div>
   <div class="callBtns" id="callIdle">
     <button class="cb" id="callText"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></i>Nhắn tin</button>
     <button class="cb go" id="callGo"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></i>Gọi Sam</button>
@@ -194,7 +199,7 @@
 
 <section id="vChat" class="view">
   <main id="chat"></main>
-  <div class="seg modeSeg" id="segMode2" role="group" aria-label="Chế độ chat"><button data-m="learn">📚 Học</button><button data-m="chat">💬 Tâm sự · việc</button><button data-m="roast">😈 Cục súc</button><button data-m="zh">🀄 HSK3</button></div>
+  <div class="seg modeSeg" id="segMode2" role="group" aria-label="Chế độ chat"><button data-m="learn">📚 Học</button><button data-m="chat">💬 Tâm sự · việc</button><button data-m="roast">😈 Cục súc</button><button data-m="zh" class="l2b">🀄 HSK3</button></div>
   <div id="modebar" hidden><span id="modeText"></span><button id="stop">Dừng</button></div>
   <footer>
     <button id="mic" aria-label="Nói"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
@@ -418,7 +423,7 @@ let reflexLog = load('gs_reflex', []); // {date, unit, avg, n}
 const voiceLevel = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); }; // độ to (RMS) một khúc mẫu micro
 function startDrill(id) {
   const u = unitById(id); if (!u) return;
-  if (callMode === 'chat' || callMode === 'zh') setCallMode('learn');
+  if (callMode === 'chat' || isL2(callMode)) setCallMode('learn');
   unit = id; store('ie_unit', unit); $('#call').hidden = false;
   callStart(`[REFLEX ${id}] Start the reflex drill "${u.t}" now — focus: ${u.d}.`, id);
 }
@@ -465,7 +470,12 @@ let scores = load('ie_scores', {});  // { 'B6-04': {score: 8, date} }
 let tests = load('ie_tests', []);    // thi thử: [{date, kind, overall, crit:{...}}]
 let callMode = load('gs_mode', 'learn'); // learn = gia sư IELTS · chat = tâm sự, trò chuyện thường ngày · zh = dạy tiếng Trung HSK3
 let phrMem = load('gs_phr', []);     // câu tiếng Anh mày hay nói sai (chế độ Cục súc), chỉ lưu trên máy
-let hskMem = load('gs_hsk', []);     // ghi chú tiến độ tiếng Trung (từ đã học, âm điệu hay sai), chỉ lưu trên máy
+let hskMem = load('gs_hsk', []);
+// Dữ liệu ngoài (data/*.js): kỳ thi, ngôn ngữ thứ hai, bảng điểm theo đích đến, civics USCIS — phục vụ khách hệ sinh thái PH (nghiên cứu 14/11/2026).
+const SD = window.SAM_DATA || {}, LANGS = SD.langs || {}, EXAMS = SD.exams || {};
+const L2_ORDER = ['zh', ...Object.keys(LANGS)], isL2 = m => m === 'zh' || !!LANGS[m];
+const l2Mem = {}, memOf = c => (l2Mem[c] ||= load('gs_mem_' + c, [])); // trí nhớ riêng từng ngôn ngữ
+let exam = load('gs_exam', 'ielts'); if (exam !== 'ielts' && !(exam === 'civics' && SD.usCivics) && !EXAMS[exam]) exam = 'ielts';     // ghi chú tiến độ tiếng Trung (từ đã học, âm điệu hay sai), chỉ lưu trên máy
 let lmem = load('gs_lmem', []), roastBase = false; // roastBase: đang dựng lời dặn Học làm nền cho Cục súc → bỏ trí nhớ Học      // chế độ Học: chuyện đã kể, chủ đề đã nói, việc còn dở (chỉ lưu trên máy)
 let ptt = load('gs_ptt', false);      // Giữ nút để nói: tắt tự nhận lượt, Sam không bao giờ cắt lời
 let mem = load('gs_mem', []);        // ghi chú ngắn Sam rút ra sau mỗi buổi tâm sự (chỉ lưu trên máy)
@@ -518,6 +528,55 @@ ${about}
 - ${hskMem.join(String.fromCharCode(10) + '- ')}
 ` : ''}When you learn something worth remembering (words learned, tones or grammar they keep missing), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes). Never mention it.`;
 }
+function l2TextPrompt(c) {
+  const L = LANGS[c], n = memOf(c);
+  return `${L.textRule}
+${L.body}
+This is a TEXT chat. Plain text, no markdown. Sentences meant to be read aloud go on their own line starting with "🗣 ". At most ONE line starting with "✏️ " per reply to fix a mistake. ${VARIETY_RULE}
+${about ? `About them, in their own words — pick topics from it:
+${about}
+` : ''}${n.length ? `Your notes from earlier lessons (recycle them, don't recite them):
+- ${n.join(String.fromCharCode(10) + '- ')}
+` : ''}`;
+}
+function l2Prompt(c) {
+  const L = LANGS[c], n = memOf(c);
+  return `${L.voiceRule}
+${L.body}
+This is a live VOICE call: turns of 1–3 short sentences. ${PAUSE_RULE}
+${about ? `About them, in their own words — pick topics from it:
+${about}
+` : ''}${n.length ? `Your notes from earlier lessons (recycle them):
+- ${n.join(String.fromCharCode(10) + '- ')}
+` : ''}Every few minutes and near the end, call save_memory with 1–5 short Vietnamese notes (words learned, sounds or grammar they keep missing). Never mention this function out loud.
+${L.voiceRule}`;
+}
+// Kỳ thi đang luyện (gs_exam): IELTS Academic mặc định; IELTS GT / TOEFL 2026 / PTE / DET từ data/exams.js; phỏng vấn quốc tịch Mỹ từ data/us-civics.js.
+function examBlock(voice) {
+  if (exam === 'civics') return civicsBlock(voice);
+  const E = EXAMS[exam];
+  if (!E) return voice ? '\nTIMING: in a mock Speaking test, right after giving the Part 2 cue card call start_timer("Part 2", 60, 120, "free", ""); the app counts down and tells you when time is up.' : '';
+  const sp = E.speaking.map(t => `- ${t.name} (${t.prepS ? `prep ${t.prepS}s, ` : ''}speak ${t.speakS}s, kind ${t.mode === 'call' ? 'free' : t.mode}): ${t.how}`).join(String.fromCharCode(10));
+  const wr = E.writing.map(t => `- ${t.name} (${t.minutes} min, ${t.words}): ${t.how}`).join(String.fromCharCode(10));
+  return `
+EXAM FOCUS — ${E.name} (score scale ${E.scale.label}). The learner is preparing for ${E.name}, NOT IELTS Academic: whenever they send [SPEAKING] or [WRITING] or ask for a mock test or exam practice, run these ${E.name} tasks instead, with ORIGINAL items you create (never quote official test material).
+SPEAKING TASKS:
+${sp}
+WRITING TASKS:
+${wr}
+Do NOT output a <band> tag and do NOT call save_speaking_result for this exam (those are IELTS-only). Criteria — speaking: ${E.criteria.speaking.join(', ')}; writing: ${E.criteria.writing.join(', ')}. Give an honest RANGE on the ${E.scale.label} scale (never a single exact number), quote one of their sentences as evidence for each criterion, and say it is Sam's estimate, not an official score.
+${voice ? 'TIMING: before each timed task call start_timer(label, prep_seconds, speak_seconds, kind, target_text): kind "readAloud" (call show_card with the exact text first), "repeat" (target_text = the sentence you say) or "free". The app enforces the timer, tells you when time is up and how many words matched. At the end of a test call save_exam_result.' : `At the end of a test output exactly ${E.scoreTag}, a profile tag, <done/>. When the learner starts a timed writing task, output once <timer>{"label":"task name","minutes":N}</timer>.`}`;
+}
+let civicsSet = null;
+function civicsBlock(voice) {
+  const C = SD.usCivics; if (!C?.questions?.length) return '';
+  const pick = civicsSet ||= [...C.questions].sort(() => Math.random() - .5).slice(0, C.asked || 20); // xáo một lần mỗi buổi thi (đặt lại khi gọi mới / gửi [SPEAKING])
+  return `
+EXAM FOCUS — US NATURALIZATION INTERVIEW (USCIS ${C.version} civics test, ${C.asked} questions asked, pass at ${C.passMark} correct). When they send [SPEAKING] or ask for a mock interview, act as a polite, formal USCIS officer: 1) greet, ask them to raise their hand and swear to tell the truth; 2) a few simple N-400 style questions about themselves (name, address, job, trips abroad, marital status) — create them, accept any honest answer, note English problems; 3) CIVICS: ask these questions one at a time in order and stop as soon as they reach ${C.passMark} correct or ${C.failAt || 9} wrong:
+${pick.map((q, i) => `${i + 1}. ${q.q} [acceptable: ${q.a.join(' | ')}]`).join(String.fromCharCode(10))}
+For answers about current officeholders accept the correct current name if you are sure, otherwise accept it and tell them to check uscis.gov/citizenship/testupdates. 4) READING: make one simple sentence only from these words and ask them to read it aloud: ${C.reading.join(', ')}. 5) WRITING: dictate one simple sentence only from these words: ${C.writing.join(', ')}. Then say pass/fail for each part and explain in short Vietnamese what to fix.
+${voice ? 'Show the reading sentence with show_card and call start_timer("Reading", 0, 20, "readAloud", <the sentence>). At the end call save_exam_result with skill "Civics", overall = number correct, low = high = number correct.' : `At the end output exactly <score2>{"exam":"civics","skill":"Civics","overall":N,"range":[N,N]}</score2> and <done/>.`}`;
+}
 function roastTextPrompt() {
   const o = callMode; callMode = 'learn'; roastBase = true; const base = systemPrompt(); roastBase = false; callMode = o;
   return `${base}
@@ -535,6 +594,7 @@ function lessonText(u) {
 function systemPrompt() {
   if (callMode === 'roast') return roastTextPrompt();
   if (callMode === 'zh') return zhTextPrompt();
+  if (LANGS[callMode]) return l2TextPrompt(callMode);
   if (callMode === 'chat') return chatTextPrompt();
   const u = unitById(unit);
   const b = profile.band || 'unknown yet';
@@ -564,7 +624,8 @@ ACTIVITIES (explanations may be in Vietnamese; every English sentence meant to b
 [WORDS] <list of word = meaning pairs> Spaced-repetition review of exactly those words: quiz them ONE at a time in a mix of ways (give the Vietnamese meaning and ask for the English word, a gap sentence, or ask them to use it in a sentence), correct at once, keep going until all are covered; at the end give the result in 1 line, then exactly <review>{"ok":["word",…],"miss":["word",…]}</review> and <done/>.
 [TALK] Stop any activity; go back to casual chat naturally.
 
-${roastBase ? '' : 'MEMORY: when they share something worth remembering (a story, a plan, a topic you covered, an open thread), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes, no full names, addresses, phone or ID numbers).' + String.fromCharCode(10)}ALWAYS: plain text, no markdown. When your picture changes, silently append at the very end: <profile>{"band":"N","weak":["..."],"note":"..."}</profile> with the FULL updated profile (band: your estimate of their Speaking band in 0.5 steps, or "" if you have seen fewer than 8 of their messages — change it only after a [SPEAKING] test or clear evidence over many messages; weak: at most 6 short Vietnamese items, only real English problems; note: one short Vietnamese sentence about their progress; always write Vietnamese with full diacritics). Never mention these tags.`;
+${roastBase ? '' : 'MEMORY: when they share something worth remembering (a story, a plan, a topic you covered, an open thread), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes, no full names, addresses, phone or ID numbers).' + String.fromCharCode(10)}${examBlock(false)}
+ALWAYS: plain text, no markdown. When your picture changes, silently append at the very end: <profile>{"band":"N","weak":["..."],"note":"..."}</profile> with the FULL updated profile (band: your estimate of their Speaking band in 0.5 steps, or "" if you have seen fewer than 8 of their messages — change it only after a [SPEAKING] test or clear evidence over many messages; weak: at most 6 short Vietnamese items, only real English problems; note: one short Vietnamese sentence about their progress; always write Vietnamese with full diacritics). Never mention these tags.`;
 }
 
 // Cập nhật hồ sơ (dùng chung cho chat và cuộc gọi). Ngoài bài thi: lần đầu cần ≥8 câu, mỗi lần đổi ≤0.5 band.
@@ -590,11 +651,14 @@ function saveExam(kind, b) {
 // Tách thẻ <profile>/<score>/<band>/<done/> khỏi lời AI, cập nhật hồ sơ, điểm, kết quả thi thử, chế độ.
 function takeTags(text) {
   const bm = text.match(/<band>([\s\S]*?)<\/band>/);
-  const exam = mode === 'SPEAKING' || mode === 'WRITING';
-  const finished = /<done\s*\/?>/.test(text) || (exam && !!bm); // thẻ band chỉ có ở lượt chấm cuối → coi như xong bài
+  const inTest = mode === 'SPEAKING' || mode === 'WRITING'; // đang làm bài thi (khác biến toàn cục exam = kỳ thi đang luyện)
+  const s2 = text.match(/<score2>([\s\S]*?)<\/score2>/);
+  const finished = /<done\s*\/?>/.test(text) || (inTest && !!bm) || !!s2; // thẻ band chỉ có ở lượt chấm cuối → coi như xong bài
   const pm = text.match(/<profile>([\s\S]*?)<\/profile>/);
-  if (pm) try { applyProfile(JSON.parse(pm[1]), mode === 'SPEAKING'); } catch {}
-  if (bm && exam) try { saveExam(mode === 'SPEAKING' ? 'Speaking' : 'Writing', JSON.parse(bm[1])); } catch {} // chỉ nhận khi bài thi kết thúc
+  if (pm) try { applyProfile(JSON.parse(pm[1]), mode === 'SPEAKING' && exam === 'ielts'); } catch {}
+  if (bm && inTest && exam === 'ielts') try { saveExam(mode === 'SPEAKING' ? 'Speaking' : 'Writing', JSON.parse(bm[1])); } catch {} // chỉ nhận khi bài thi kết thúc
+  if (s2) try { const j = JSON.parse(s2[1]); saveExam2(examName(), j.skill, j.overall, j.range); } catch {}
+  const tmm = text.match(/<timer>([\s\S]*?)<\/timer>/); if (tmm) try { chatTimer(JSON.parse(tmm[1])); } catch {}
   const sm = text.match(/<score>([\s\S]*?)<\/score>/);
   if (sm && finished && mode === 'LESSON') { // chỉ nhận điểm khi bài học kết thúc
     try {
@@ -611,7 +675,7 @@ function takeTags(text) {
   if (mm) try { addNotes(JSON.parse(mm[1])); } catch {}
   if (finished) setMode('');
   showLevel();
-  return text.replace(/<(profile|score|band|memory|words|review)>[\s\S]*?(<\/\1>|$)/g, '').replace(/<\/?done\s*\/?>/g, '').trim();
+  return text.replace(/<(profile|score2|score|band|memory|words|review|timer)>[\s\S]*?(<\/\1>|$)/g, '').replace(/<\/?done\s*\/?>/g, '').trim();
 }
 // Có dòng 🗣 (lúc học/thi) thì chỉ đọc các dòng đó; nói chuyện thường thì đọc mọi dòng trừ ✏️ 💡.
 function spoken(text) {
@@ -622,7 +686,21 @@ function spoken(text) {
 
 function showLevel() { $('#level').textContent = `Band ${profile.band || '?'}`; }
 
+const mockText = () => exam === 'ielts' ? '[SPEAKING] Please start a full mock IELTS Speaking test now, Part 1 first.' : `[SPEAKING] Please start a full mock ${examName()} ${exam === 'civics' ? 'interview' : 'speaking test'} now, first task first.`;
+const examName = () => exam === 'civics' ? 'Phỏng vấn quốc tịch Mỹ' : EXAMS[exam]?.name || 'IELTS';
+function saveExam2(name, skill, overall, range, note) { // kết quả kỳ thi khác IELTS: lưu dạng khoảng, không có tiêu chí IELTS
+  const o = Number(overall); if (!isFinite(o)) return;
+  tests.push({ date: today(), kind: `${name} · ${skill || ''}`, overall: String(o), range: (Array.isArray(range) ? range : []).map(Number).filter(isFinite), crit: {}, note: String(note || '').slice(0, 200) });
+  store('ie_tests', tests);
+}
+let chatTid = 0;
+function chatTimer(t) { // đồng hồ bài viết trong chat chữ (vd IELTS GT Task 1 = 20 phút)
+  clearInterval(chatTid); let left = Math.max(1, Math.min(120, +t.minutes || 20)) * 60; const lab = String(t.label || 'Bài viết').slice(0, 40);
+  const show = () => { const m = Math.floor(left / 60), sec = left % 60; $('#modeText').textContent = `⏱ ${lab}: ${m}:${String(sec).padStart(2, '0')}`; if (left-- <= 0) { clearInterval(chatTid); $('#modeText').textContent = `⏰ ${lab}: hết giờ, nộp bài đi`; } };
+  $('#modebar').hidden = false; show(); chatTid = setInterval(show, 1000);
+}
 function setMode(m) {
+  if (!m) clearInterval(chatTid);
   mode = m; store('ie_mode', mode);
   const label = { SPEAKING: '🎤 Đang thi thử Speaking', WRITING: '✍️ Đang chấm Writing', REVIEW: '🔁 Đang ôn điểm yếu', WORDS: '🔁 Đang ôn từ vựng đến hạn', LESSON: `📚 ${unit}: ${unitById(unit)?.t || ''}` }[mode];
   $('#modebar').hidden = !label;
@@ -665,7 +743,7 @@ function renderRoad() {
   const road = $('#road'); road.innerHTML = '';
   const tabs = el('div'); tabs.id = 'roadTabs';
   road.append(todayCard());
-  for (const [k, label] of [['I', 'IELTS'], ['R', '⚡ Phản xạ'], ['G', 'Ngữ pháp'], ['V', 'Từ vựng']]) {
+  for (const [k, label] of [['I', '🎯 Kỳ thi'], ['R', '⚡ Phản xạ'], ['G', 'Ngữ pháp'], ['V', 'Từ vựng']]) {
     const b = el('button', roadTab === k ? 'on' : '', label); b.onclick = () => { roadTab = k; store('gs_road', k); renderRoad(); }; tabs.append(b);
   }
   road.append(tabs);
@@ -734,6 +812,25 @@ function renderIelts(road) {
   const nxt = nextUnit();
 
   const sum = el('div', 'card');
+  // Kỳ thi đang luyện + điểm cần theo đích đến (khách PH: du học, định cư, đi làm)
+  const ex = el('div', 'card'); ex.append(el('h2', '', '🎯 Kỳ thi đang luyện'));
+  const es = el('select'); es.id = 'examSel'; es.setAttribute('aria-label', 'Kỳ thi đang luyện');
+  for (const [k, n] of [['ielts', 'IELTS Academic'], ...Object.entries(EXAMS).map(([k, e]) => [k, e.name]), ...(SD.usCivics?.questions?.length ? [['civics', '🇺🇸 Phỏng vấn quốc tịch Mỹ']] : [])]) { const o = el('option', '', n); o.value = k; es.append(o); }
+  es.value = exam; es.onchange = () => { exam = es.value; store('gs_exam', exam); renderRoad(); };
+  ex.append(es, el('p', 'hint', exam === 'ielts' ? 'Thi thử và chấm theo IELTS Academic. Điểm của Sam là ước lượng, không phải điểm chính thức.' : exam === 'civics' ? SD.usCivics.note : EXAMS[exam].note));
+  road.append(ex);
+  const T = SD.targets || [];
+  if (T.length) {
+    const tc = el('div', 'card'); tc.append(el('h2', '', '🧭 Cần bao nhiêu điểm cho đích đến'));
+    const ts = el('select'); ts.id = 'targetSel'; ts.setAttribute('aria-label', 'Đích đến');
+    T.forEach((t, i) => { const o = el('option', '', t.label); o.value = i; ts.append(o); });
+    const box = el('div'), draw = () => {
+      const t = T[ts.value] || T[0]; store('gs_target', +ts.value || 0);
+      box.replaceChildren(...t.tests.map(x => el('p', 'hist', `${x.test}: ${x.overall ?? '—'}${x.skills ? ' · ' + Object.entries(x.skills).map(([k, v]) => `${k} ${v}`).join(' · ') : ''}${x.scale ? ` (${x.scale})` : ''}`)),
+        el('p', 'hint', `${t.note || ''}${t.verified === false ? ' · ⚠ nguồn chưa kiểm chứng, xem lại trang chính thức trước khi nộp hồ sơ' : ''} · số liệu ${SD.targetsAsOf || ''}`));
+    };
+    ts.value = String(Math.min(load('gs_target', 0), T.length - 1)); ts.onchange = draw; draw(); tc.append(ts, box); road.append(tc);
+  }
   sum.append(el('h2', '', 'Band của bạn'));
   const st = el('div', 'stats');
   for (const [v, k] of [[profile.band || '?', 'Nói (ước tính)'], [last('Speaking')?.overall || '–', 'Speaking thi thử'], [last('Writing')?.overall || '–', 'Writing thi thử']]) {
@@ -746,7 +843,7 @@ function renderIelts(road) {
     const ch = el('div', 'chips'); profile.weak.forEach(w => ch.append(el('span', '', w))); sum.append(ch);
   }
   const acts = el('div', 'acts');
-  for (const [label, fn, cls] of [['🎤 Thi thử Speaking', () => { $('#call').hidden = false; callStart('[SPEAKING] Please start a full mock IELTS Speaking test now, Part 1 first.'); }, 'pri'], ['✍️ Chấm Writing', () => start('[WRITING]'), 'pri'],
+  for (const [label, fn, cls] of [['🎤 Thi thử Speaking', () => { $('#call').hidden = false; callStart(mockText()); }, 'pri'], ['✍️ Chấm Writing', () => start('[WRITING]'), 'pri'],
                                   ['📚 Bài tiếp theo', () => startLesson(nxt.id)], ['🔁 Ôn điểm yếu', () => start('[REVIEW]')]]) {
     const b = el('button', cls || '', label); b.onclick = fn; acts.append(b);
   }
@@ -757,7 +854,7 @@ function renderIelts(road) {
   if (tests.length) {
     const h = el('div', 'card'); h.append(el('h2', '', 'Lịch sử thi thử'));
     for (const t of [...tests].reverse().slice(0, 8))
-      h.append(el('p', 'hist', `${t.date} · ${t.kind} ${t.overall} (${Object.entries(t.crit).map(([k, v]) => `${k} ${v || '?'}`).join(' · ')})`));
+      h.append(el('p', 'hist', `${t.date} · ${t.kind} ${t.range?.length === 2 && t.range[0] !== t.range[1] ? t.range.join('–') : t.overall}${Object.keys(t.crit).length ? ` (${Object.entries(t.crit).map(([k, v]) => `${k} ${v || '?'}`).join(' · ')})` : ''}`));
     road.append(h);
   }
 
@@ -791,7 +888,7 @@ function speak(t) {
   if (!t || !window.speechSynthesis) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(t);
-  const zh = /[一-鿿]/.test(t), L = zh ? 'zh-CN' : 'en-US'; u.lang = L; u.rate = zh ? 0.85 : 0.95;
+  const zh = /[一-鿿]/.test(t), L = LANGS[callMode]?.speechLang || (zh ? 'zh-CN' : 'en-US'); u.lang = L; u.rate = zh ? 0.85 : 0.95;
   const vs = speechSynthesis.getVoices(), lang = v => v.lang.replace('_', '-'); // Chrome Android ghi en_US
   const v = vs.find(v => lang(v) === L) || vs.find(v => lang(v).startsWith(L.slice(0, 2)));
   if (v) u.voice = v;
@@ -833,7 +930,8 @@ async function send(text) {
   if (!text || busy) return;
   if (!key) { $('#set').showModal(); return; }
   const cmd = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON|WORDS)/);
-  if (cmd) { setMode(cmd[1] === 'TALK' ? '' : cmd[1]); if (callMode === 'chat' || callMode === 'zh') setCallMode('learn'); }
+  if (cmd?.[1] === 'SPEAKING') civicsSet = null;
+  if (cmd) { setMode(cmd[1] === 'TALK' ? '' : cmd[1]); if (callMode === 'chat' || isL2(callMode)) setCallMode('learn'); }
   const wasWriting = mode === 'WRITING';
   busy = true;
   hist.push({ role: 'user', text });
@@ -861,7 +959,8 @@ function startLesson(id) { unit = id; store('ie_unit', unit); start(`[LESSON ${i
 // nói nhiều lần được (Part 2 dài 1–2 phút), xong bấm ➤ mới gửi.
 const addNotes = notes => {
   const n = (notes || []).map(x => String(x).slice(0, 160)), add = a => [...new Set([...a, ...n])].slice(-30);
-  if (callMode === 'zh') { hskMem = add(hskMem); store('gs_hsk', hskMem); }
+  if (LANGS[callMode]) { l2Mem[callMode] = add(memOf(callMode)); store('gs_mem_' + callMode, l2Mem[callMode]); }
+  else if (callMode === 'zh') { hskMem = add(hskMem); store('gs_hsk', hskMem); }
   else if (callMode === 'roast') { phrMem = add(phrMem); store('gs_phr', phrMem); }
   else if (callMode === 'chat') { mem = add(mem); store('gs_mem', mem); }
   else { lmem = add(lmem); store('gs_lmem', lmem); }
@@ -880,7 +979,7 @@ if (SR) {
   $('#mic').onclick = () => {
     if ($('#mic').classList.contains('on')) return rec.stop();
     speechSynthesis?.cancel();
-    $('#mic').classList.add('on'); rec.lang = callMode === 'zh' ? 'zh-CN' : 'en-US';
+    $('#mic').classList.add('on'); rec.lang = LANGS[callMode]?.speechLang || (callMode === 'zh' ? 'zh-CN' : 'en-US');
     try { rec.start(); } catch { $('#mic').classList.remove('on'); } // trình duyệt từ chối (đang nghe dở…) thì nút không kẹt đỏ
   };
 } else $('#mic').hidden = true;
@@ -900,14 +999,14 @@ $('#save').onclick = () => {
 $('#reset').onclick = () => {
   if (!confirm('Xoá toàn bộ trò chuyện, band, điểm, lịch sử thi thử, sổ từ, nhật ký phản xạ và trí nhớ của Sam? (Giữ khoá API và phần giới thiệu bản thân.)')) return;
   profile = { band: '', weak: [], note: '' }; hist = []; scores = {}; tests = []; unit = '';
-  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
+  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; for (const k in l2Mem) delete l2Mem[k]; exam = 'ielts'; civicsSet = null; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
   try { for (const k of Object.keys(localStorage)) if (/^(ie_|gs_(?!key|model|about))/.test(k)) localStorage.removeItem(k); } catch {}
   store('gs_mode', callMode); // giữ chế độ đang chọn
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
 };
 
 function greet() {
-  if (callMode !== 'learn') { $('#chat').append(el('div', 'cmd', MODE_INTRO[callMode])); return; }
+  if (callMode !== 'learn') { $('#chat').append(el('div', 'cmd', LANGS[callMode]?.intro || MODE_INTRO[callMode])); return; }
   render({ role: 'model', text: "Hey! I'm Sam, your IELTS buddy.\nHow's your day going?\n💡 Cứ nói thoải mái như với bạn bè, bí chữ thì nói tiếng Việt, mình chỉ cách người bản xứ nói. Bấm 📞 Gọi để nói chuyện bằng giọng. Thi thử Speaking, chấm Writing và lộ trình học ở tab 🎯 Lộ trình." }); }
 
 // ===== GỌI THOẠI TRỰC TIẾP (Gemini Live): nghe & nói thời gian thực, giọng có cảm xúc, chen ngang được =====
@@ -922,6 +1021,12 @@ const LIVE_TOOLS = [{ functionDeclarations: [
     parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'FC', 'LR', 'GRA', 'P'] } },
   { name: 'save_drill', description: 'Save the result of a finished [REFLEX] drill',
     parameters: { type: 'OBJECT', properties: { unit: { type: 'STRING' }, correct: { type: 'NUMBER' }, total: { type: 'NUMBER' } }, required: ['correct', 'total'] } },
+  { name: 'show_card', description: 'Show a text card on the learner screen (task instructions, a text to read aloud, a cue card)',
+    parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, text: { type: 'STRING' } }, required: ['text'] } },
+  { name: 'start_timer', description: 'Start an exam timer: optional preparation, then speaking time. kind: free | readAloud | repeat. For readAloud/repeat give target_text so the app can measure word accuracy.',
+    parameters: { type: 'OBJECT', properties: { label: { type: 'STRING' }, prep_seconds: { type: 'NUMBER' }, speak_seconds: { type: 'NUMBER' }, kind: { type: 'STRING' }, target_text: { type: 'STRING' } }, required: ['label', 'speak_seconds'] } },
+  { name: 'save_exam_result', description: 'Save the result of a finished non-IELTS mock test (TOEFL, PTE, DET, IELTS GT, US civics) as an estimate range',
+    parameters: { type: 'OBJECT', properties: { skill: { type: 'STRING' }, overall: { type: 'NUMBER' }, low: { type: 'NUMBER' }, high: { type: 'NUMBER' }, feedback: { type: 'STRING' } }, required: ['skill', 'overall'] } },
 ] }];
 const WORKLET = "class P extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}}registerProcessor('p',P)";
 const b64 = buf => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -964,6 +1069,7 @@ Voice call reminder: judge their pronunciation too and make them repeat until it
 function livePrompt() {
   if (callMode === 'roast') return roastPrompt();
   if (callMode === 'zh') return zhPrompt();
+  if (LANGS[callMode]) return l2Prompt(callMode);
   if (callMode === 'chat') return chatPrompt();
   const recent = hist.slice(-12).filter(m => !cmdLabel(m.text)).map(m => (m.role === 'user' ? 'Learner: ' : 'Sam: ') + m.text.replace(/\s+/g, ' ')).join('\n');
   return `LANGUAGE RULE (most important): you SPEAK ONLY ENGLISH — never Vietnamese, never any other language, not even when the learner speaks Vietnamese to you (the only exception: they explicitly ask you to switch to Vietnamese). You fully UNDERSTAND Vietnamese. The learner ONLY ever speaks English (often with a Vietnamese accent) or Vietnamese. If their audio sounds like Chinese, Thai, Indonesian, Japanese, Korean or anything else, it is really accented English or Vietnamese — answer in English. If you truly can't make out what they said, ask them in English to say it again.
@@ -979,7 +1085,8 @@ When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train ins
 ${roastBase ? '' : 'Every few minutes and near the end, call save_memory with 1–5 short Vietnamese notes (stories they told, topics you covered, open threads) so you can pick them up next time. '}After a few minutes, and whenever your picture of them changes, call save_profile (band in 0.5 steps; weak: up to 6 short items in Vietnamese with full diacritics; note: one short Vietnamese sentence). Never mention these functions out loud.
 ${!roastBase && lmem.length ? `What you remember from earlier sessions (bring it up naturally, don't recite it):
 - ${lmem.join(String.fromCharCode(10) + '- ')}
-` : ''}Recent conversation for context:
+` : ''}${examBlock(true)}
+Recent conversation for context:
 ${recent || '(none yet)'}
 Remember: speak ONLY English, even when they speak Vietnamese.`;
 }
@@ -1012,6 +1119,7 @@ function flush(L) {
 async function callStart(firstText, drill = null) {
   if (live) return;
   if (!key) { $('#set').showModal(); return; }
+  civicsSet = null; // cuộc gọi mới = bộ câu civics mới (nối lại phiên thì giữ)
   const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0 };
   const gone = () => live !== L; // bấm Kết thúc trong lúc đang kết nối: mọi thứ mở xong sau đó phải nhả ngay (micro, WebSocket, khoá màn hình)
   callUI('connecting');
@@ -1080,13 +1188,17 @@ function reconnect(L) {
 
 // Chữ Trung/Nhật/Hàn/Thái/Nga/Ả Rập… trong lời Sam = lạc tiếng (giọng Anh lơ lớ bị nhận nhầm) → cắt tiếng, nhắc nói lại bằng tiếng Anh
 const FOREIGN = /[\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u0E00-\u0E7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
+function slipped(t) { // Sam lỡ nói ngôn ngữ ngoài chế độ đang học
+  if (callMode === 'zh') return FOREIGN_ZH.test(t);
+  const L = LANGS[callMode]; return FOREIGN.test(L?.scriptRe ? t.replace(new RegExp(L.scriptRe, 'g'), '') : t);
+}
 const FOREIGN_ZH = /[\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u0E00-\u0E7F\u3040-\u30FF\uAC00-\uD7AF]/; // học tiếng Trung: chữ Hán được phép
 function onLive(L, m, firstText) {
   if (live !== L) return;
   if (m.setupComplete) {
     L.ready = true; callUI('listening');
     if (L.resumed) return; // nối lại phiên cũ: Sam nhớ hết, không chào lại
-    L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: firstText || (callMode === 'roast' ? '(The call just connected. Greet me in your rough, sassy style in Vietnamese, one or two lines, and dare me to throw you a Vietnamese phrase to translate.)' : callMode === 'zh' ? '(The call just connected. Greet me in simple Mandarin like a friendly teacher, then ask me one easy HSK 2 question.)' : callMode === 'chat' ? '(The call just connected. Greet me like a close friend picking up the phone, and ask how my day really is.)' : '(The call just connected. Greet me warmly like a friend picking up the phone.)') }] }], turnComplete: true } }));
+    L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: firstText || LANGS[callMode]?.greet || (callMode === 'roast' ? '(The call just connected. Greet me in your rough, sassy style in Vietnamese, one or two lines, and dare me to throw you a Vietnamese phrase to translate.)' : callMode === 'zh' ? '(The call just connected. Greet me in simple Mandarin like a friendly teacher, then ask me one easy HSK 2 question.)' : callMode === 'chat' ? '(The call just connected. Greet me like a close friend picking up the phone, and ask how my day really is.)' : '(The call just connected. Greet me warmly like a friend picking up the phone.)') }] }], turnComplete: true } }));
     return;
   }
   if (m.toolCall) {
@@ -1094,8 +1206,11 @@ function onLive(L, m, firstText) {
     for (const f of fs) try {
       if (f.name === 'save_profile' && (callMode === 'learn' || callMode === 'roast')) applyProfile(f.args || {}, false);
       if (f.name === 'save_memory') addNotes(f.args?.notes);
-      if (f.name === 'save_speaking_result') saveExam('Speaking', f.args || {});
+      if (f.name === 'save_speaking_result') exam === 'ielts' ? saveExam('Speaking', f.args || {}) : saveExam2(examName(), 'Speaking', f.args?.overall, []);
       if (f.name === 'save_drill' && L.drill) saveDrill(L, f.args || {});
+      if (f.name === 'show_card') showCard(L, f.args || {});
+      if (f.name === 'start_timer') startTimer(L, f.args || {});
+      if (f.name === 'save_exam_result') { const a = f.args || {}; saveExam2(examName(), a.skill, a.overall, [a.low, a.high], a.feedback); }
     } catch {}
     L.ws.send(JSON.stringify({ toolResponse: { functionResponses: fs.map(f => ({ id: f.id, name: f.name, response: { ok: true } })) } }));
     return;
@@ -1104,11 +1219,12 @@ function onLive(L, m, firstText) {
   if (m.goAway) { if (L.handle) return reconnect(L); $('#callStatus').textContent = 'Phiên gọi sắp hết giờ, lát nữa bấm Gọi lại nhé.'; }
   const sc = m.serverContent; if (!sc) return;
   L.retries = 0; // máy chủ đã trả nội dung → kết nối ổn, đặt lại bộ đếm nối lại
-  if (sc.inputTranscription?.text) { L.inT += sc.inputTranscription.text; $('#callYou').textContent = 'Bạn: ' + L.inT.trim(); window.Avatar?.listen(); }
+  if (sc.inputTranscription?.text) { if (L.task?.phase === 'speak') L.task.said += ' ' + sc.inputTranscription.text; L.inT += sc.inputTranscription.text; $('#callYou').textContent = 'Bạn: ' + L.inT.trim(); window.Avatar?.listen(); }
   if (sc.outputTranscription?.text) {
-    if ((callMode === 'zh' ? FOREIGN_ZH : FOREIGN).test(sc.outputTranscription.text) && !L.mute) {
+    if (L.task?.phase === 'speak' && L.task.said.trim() && L.task.kind !== 'free') finishTask(L, false); // đọc to/nhắc lại xong trước giờ, Sam đã đáp (bài nói tự do: ngừng giữa chừng không tính là xong)
+    if (slipped(sc.outputTranscription.text) && !L.mute) {
       L.mute = true; L.outT = ''; stopPlayback(L);
-      L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: callMode === 'zh' ? '(You slipped into another language. Say that again in Mandarin, with a short Vietnamese explanation.)' : '(You slipped into another language. Say that again in English.)' }] }], turnComplete: true } }));
+      L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: LANGS[callMode] ? `(You slipped into another language. Say that again in ${LANGS[callMode].name}, with a short Vietnamese explanation.)` : callMode === 'zh' ? '(You slipped into another language. Say that again in Mandarin, with a short Vietnamese explanation.)' : '(You slipped into another language. Say that again in English.)' }] }], turnComplete: true } }));
     }
     if (!L.mute) { L.outT += sc.outputTranscription.text; $('#callSam').textContent = 'Sam: ' + L.outT.trim(); window.Avatar?.react(L.outT); }
   }
@@ -1116,6 +1232,7 @@ function onLive(L, m, firstText) {
   if (sc.interrupted) stopPlayback(L);
   if (sc.interrupted || sc.turnComplete) L.mute = false;
   if (sc.turnComplete && window.Avatar?.active) { Avatar.mood(L.outT); Avatar.end(); Avatar.newTurn(); }
+  if (sc.turnComplete && L.pendingNote) { tellSam(L, L.pendingNote, false); L.pendingNote = ''; } // số đo đọc to: gửi khi Sam nói xong, chỉ làm ngữ cảnh, không bắt Sam nói tiếp
   if (sc.turnComplete || sc.interrupted) flush(L);
 }
 
@@ -1152,8 +1269,46 @@ function release(L) { // nhả micro, âm thanh, kết nối, khoá màn hình c
   L.inCtx?.close().catch(() => {}); L.outCtx?.close().catch(() => {}); // gọi 2 lần (tắt lúc đang kết nối) thì close() lần 2 trả lỗi bất đồng bộ
   try { L.wake?.release(); } catch {}
 }
+// Thẻ đề + đồng hồ thi trên màn gọi. Bài đọc to / nhắc lại: app tự so lời chép với câu gốc (số từ khớp theo thứ tự).
+const tellSam = (L, text, complete = true) => { if (L.ready && L.ws?.readyState === 1) L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text }] }], turnComplete: complete } })); };
+function wordMatch(target, said) {
+  const w = x => String(x).toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').split(/\s+/).filter(Boolean), a = w(target), b = w(said);
+  if (!a.length) return { pct: 0, missed: [] };
+  const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const missed = []; let i = 0, j = 0;
+  while (i < a.length) { if (j < b.length && a[i] === b[j]) { i++; j++; } else if (j < b.length && dp[i][j + 1] >= dp[i + 1][j]) j++; else missed.push(a[i++]); }
+  return { pct: Math.round(100 * dp[0][0] / a.length), missed };
+}
+function showCard(L, a) { L.cardText = String(a.text || ''); $('#ecTitle').textContent = String(a.title || ''); $('#ecText').textContent = L.cardText; $('#ecTimer').textContent = ''; $('#examCard').hidden = false; }
+function startTimer(L, a) {
+  clearInterval(L.tid); const prep = Math.max(0, Math.min(300, +a.prep_seconds || 0)), speak = Math.max(5, Math.min(600, +a.speak_seconds || 60));
+  L.task = { kind: a.kind || 'free', target: String(a.target_text || (a.kind === 'readAloud' ? L.cardText : '') || ''), said: '', phase: prep ? 'prep' : 'speak' };
+  if ($('#examCard').hidden) { $('#ecTitle').textContent = String(a.label || 'Bài thi'); $('#ecText').textContent = ''; $('#examCard').hidden = false; }
+  let left = prep || speak;
+  const tick = () => {
+    if (!L.task) return clearInterval(L.tid);
+    $('#ecTimer').textContent = `${L.task.phase === 'prep' ? '⏳ Chuẩn bị' : '🎤 Nói'} ${left}s`;
+    if (--left >= 0) return;
+    if (L.task.phase === 'prep') { L.task.phase = 'speak'; left = speak; return; }
+    finishTask(L, true);
+  };
+  tick(); L.tid = setInterval(tick, 1000);
+}
+function finishTask(L, timeUp) { // timeUp: hết giờ khi người học còn nói → báo Sam cắt; xong sớm → chỉ gửi số đo, không bắt Sam nói thêm
+  const t = L.task; if (!t) return; L.task = null; L.cardText = ''; clearInterval(L.tid);
+  let note = timeUp ? '(Time is up — stop the learner now and continue the test.)' : '';
+  $('#ecTimer').textContent = timeUp ? '⏰ Hết giờ' : '✓ Xong';
+  if ((t.kind === 'readAloud' || t.kind === 'repeat') && t.target) {
+    const m = wordMatch(t.target, t.said);
+    $('#ecTimer').textContent += ` · khớp ${m.pct}% số từ`;
+    note = `(${timeUp ? 'Time is up. ' : ''}App measurement for the last ${t.kind} task: ${m.pct}% of the target words were said in order${m.missed.length ? '; missed: ' + m.missed.slice(0, 12).join(', ') : ''}. Use it in your feedback.)`;
+  }
+  if (note) timeUp ? tellSam(L, note, true) : (L.pendingNote = note);
+}
 function callEnd(L, msg) {
   if (!L) return;
+  clearInterval(L.tid); L.task = null; $('#examCard').hidden = true;
   logDrill(L);
   if (live === L) live = null;
   release(L);
@@ -1162,7 +1317,8 @@ function callEnd(L, msg) {
   callUI('idle', msg);
 }
 
-const setCallMode = m => { callMode = m; store('gs_mode', m); document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); $('#text').placeholder = m === 'roast' ? 'Hỏi kiểu: gội đầu tiếng Anh nói sao?' : m === 'zh' ? 'Gõ tiếng Trung, pinyin hoặc tiếng Việt…' : m === 'chat' ? 'Tâm sự, hoặc dán tin của sếp…' : 'Nhắn cho Sam…'; };
+const l2Label = m => m === 'zh' ? '🀄 HSK3' : LANGS[m]?.label || m;
+const setCallMode = m => { callMode = m; store('gs_mode', m); if (isL2(m)) document.querySelectorAll('.l2b').forEach(b => { b.dataset.m = m; b.textContent = l2Label(m); }); document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); $('#text').placeholder = m === 'roast' ? 'Hỏi kiểu: gội đầu tiếng Anh nói sao?' : LANGS[m] ? LANGS[m].placeholder : m === 'zh' ? 'Gõ tiếng Trung, pinyin hoặc tiếng Việt…' : m === 'chat' ? 'Tâm sự, hoặc dán tin của sếp…' : 'Nhắn cho Sam…'; };
 const MODE_INTRO = {
   learn: '— 📚 Chế độ Học: nói chuyện bằng tiếng Anh, hỏi "X tiếng Anh nói sao?", Sam sửa và bắt nói lại —',
   chat: '— 💬 Chế độ Tâm sự: nói gì cũng được, không học; dán tin nhắn của sếp để Sam soạn 2 bản trả lời —',
@@ -1170,9 +1326,11 @@ const MODE_INTRO = {
   zh: '— 🀄 Chế độ HSK3: học tiếng Trung, gõ chữ Hán, pinyin hay tiếng Việt đều được —',
 };
 document.querySelectorAll('.modeSeg button, #segMode button').forEach(b => b.onclick = () => {
-  if (b.dataset.m === callMode) return;
-  setCallMode(b.dataset.m);
-  $('#chat').append(el('div', 'cmd', MODE_INTRO[callMode])); $('#chat').scrollTop = 1e9; // báo chế độ mới ngay trong khung chat
+  let m = b.dataset.m;
+  if (b.classList.contains('l2b') && m === callMode) m = L2_ORDER[(L2_ORDER.indexOf(m) + 1) % L2_ORDER.length]; // bấm lại nút ngôn ngữ = đổi sang ngôn ngữ kế
+  if (m === callMode) return;
+  setCallMode(m);
+  $('#chat').append(el('div', 'cmd', (LANGS[callMode]?.intro || MODE_INTRO[callMode]) + (isL2(callMode) ? ' (bấm lại nút này để đổi: Trung → Đức → Hàn → Nhật → Đài)' : ''))); $('#chat').scrollTop = 1e9; // báo chế độ mới ngay trong khung chat
 });
 setCallMode(callMode);
 $('#callGo').onclick = () => callStart();
@@ -1189,7 +1347,7 @@ document.addEventListener('visibilitychange', () => {
   } else clearTimeout(bgTimer);
 }); // tải sẵn nhân vật 3D (~9 MB, lần đầu) khi mở app
 $('#callStop').onclick = () => callEnd(live);
-$('#callExam').onclick = () => live?.ready && live.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '[SPEAKING] Please start a full mock IELTS Speaking test now, Part 1 first.' }] }], turnComplete: true } }));
+$('#callExam').onclick = () => live?.ready && live.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: mockText() }] }], turnComplete: true } }));
 $('#callMute').onclick = () => { if (!live || live.ptt) return; live.muted = !live.muted; $('#callMute').classList.toggle('on', live.muted); $('#callMute span').textContent = live.muted ? 'Bật mic' : 'Tắt mic'; };
 // Giữ nút để nói: nhấn = báo bắt đầu lượt (Sam im ngay), thả = báo hết lượt.
 const pttUp = () => { const L = live; if (!L?.ptt || !L.holding) return; L.holding = false; $('#callMute').classList.remove('on'); if (L.ws?.readyState === 1) L.ws.send(JSON.stringify({ realtimeInput: { activityEnd: {} } })); };

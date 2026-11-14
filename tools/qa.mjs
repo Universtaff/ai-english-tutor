@@ -23,7 +23,7 @@ let n = 0; for (const f of mjs) { try { execSync(`node --check "${path.join(ROOT
 if (!n) ok('cú pháp: ' + mjs.join(', ') + ' + script trong index.html');
 
 const refs = new Set(); for (const src of [html, ...mjs.map(read), read('sw.js'), read('manifest.json')])
-  for (const m of src.matchAll(/['"`(]((?:\.\/)?(?:bg\/[\w\-.${}]+|[\w\-]+\.(?:glb|png|jpg|mp4|mjs|json|js)))(?:\?[^'"`)]*)?['"`)]/g)) refs.add(m[1].replace(/^\.\//, ''));
+  for (const m of src.matchAll(/['"`(]((?:\.\/)?(?:bg\/[\w\-.${}]+|data\/[\w\-.]+\.js|[\w\-]+\.(?:glb|png|jpg|mp4|mjs|json|js)))(?:\?[^'"`)]*)?['"`)]/g)) refs.add(m[1].replace(/^\.\//, ''));
 const miss = [...refs].filter(r => !r.includes('${') && !r.includes('<') && !fs.existsSync(path.join(ROOT, r)) && !/^(bg\/[\w-]+\.(jpg|mp4))$/.test(r));
 check(!miss.length, `file tham chiếu đều có (${refs.size})`, miss.join(', '));
 for (const p of ['ngay', 'chieu', 'dem']) check(fs.existsSync(path.join(ROOT, `bg/${p}.jpg`)), `tranh tĩnh dự phòng bg/${p}.jpg`);
@@ -284,6 +284,26 @@ check(okList(md), 'model ghim gemini-3.5-flash-lite (404 → bí danh) · luật
 check(okList(zh), 'chế độ HSK3: dạy tiếng Trung · cho phép chữ Hán · nạp tiến độ', Array.isArray(zh) ? zh.join('; ') : JSON.stringify(zh));
 const ci = await ev(`(()=>{document.querySelector('nav button[data-view=vRoad]').click();const k=document.getElementById('road').children.length;document.querySelector('nav button[data-view=vChat]').click();document.getElementById('openSet').click();const d=document.getElementById('set').open;document.getElementById('set').close();return {k,d}})()`);
 check(ci?.k > 2 && ci?.d, 'tab IELTS dựng được, hộp Cài đặt mở được', JSON.stringify(ci));
+
+// Kỳ thi khác IELTS, bảng đích đến, civics, đồng hồ thi, ngôn ngữ thứ hai (v60).
+const ex = await ev(`(()=>{const r=[],D=window.SAM_DATA||{};if(!D.exams||Object.keys(D.exams).length<4)r.push('thiếu data/exams.js');if(Object.keys(D.langs||{}).length<4)r.push('thiếu data/langs.js');if((D.targets||[]).length<10)r.push('thiếu data/targets.js');if((D.usCivics?.questions||[]).length!==128)r.push('civics không đủ 128 câu');
+  const e0=exam,c0=callMode,t0=tests.length;callMode='learn';exam='toefl';if(!/EXAM FOCUS — TOEFL/.test(systemPrompt()))r.push('chat chữ không có EXAM FOCUS TOEFL');if(!/start_timer/.test(livePrompt()))r.push('lời gọi TOEFL thiếu hướng dẫn đồng hồ');
+  exam='civics';const p=livePrompt();if(!/USCIS/.test(p)||(p.match(/acceptable:/g)||[]).length!==20)r.push('phỏng vấn quốc tịch không đủ 20 câu');
+  exam='toefl';mode='SPEAKING';const p0=JSON.stringify(profile);takeTags('chấm thử <band>{"kind":"Speaking","overall":7,"FC":7,"LR":7,"GRA":7,"P":7}</band>');if(tests.length!==t0)r.push('đang luyện TOEFL mà vẫn lưu điểm IELTS');profile=JSON.parse(p0);exam='civics';const c1=civicsBlock(false),c2=civicsBlock(false);if(c1!==c2)r.push('bộ câu civics bị xáo lại mỗi tin nhắn');civicsSet=null;exam='toefl';mode='';takeTags('xong <score2>{"exam":"toefl","skill":"Writing","overall":4.5,"range":[4,5]}</score2>');const t=tests.at(-1);if(tests.length!==t0+1||t.range?.join()!=='4,5')r.push('thẻ score2 không lưu khoảng điểm');tests.splice(t0);store('ie_tests',tests);
+  exam=e0;callMode=c0;roadTab='I';renderRoad();if(!document.getElementById('examSel')||!document.getElementById('targetSel'))r.push('tab Kỳ thi thiếu chọn kỳ thi/đích đến');return r})()`);
+check(okList(ex), 'kỳ thi khác IELTS (TOEFL/civics) · thẻ score2 · tab Kỳ thi + bảng đích đến · đủ 4 tệp data', Array.isArray(ex) ? ex.join('; ') : JSON.stringify(ex));
+const tmr = await ev(`(async()=>{const r=[],w=wordMatch('The cat sat on the mat','the cat sat on mat');if(w.pct!==83||w.missed.join()!=='the')r.push('wordMatch sai '+JSON.stringify(w));
+  const sent=[],L={ready:true,ws:{readyState:1,send:d=>sent.push(JSON.parse(d))},inT:'',outT:'',sources:[]};const lv0=live;live=L;document.getElementById('call').hidden=false;startTimer(L,{label:'Read Aloud',prep_seconds:0,speak_seconds:30,kind:'readAloud',target_text:'Hello world again'});
+  if(document.getElementById('examCard').hidden)r.push('không hiện thẻ đồng hồ');L.task.said=' hello world';finishTask(L,false);const tx=document.getElementById('ecTimer').textContent;
+  if(!/67%/.test(tx))r.push('không hiện % khớp: '+tx);if(sent.length)r.push('gửi số đo khi Sam còn đang nói (cắt lời Sam)');if(!/67%/.test(L.pendingNote||''))r.push('không giữ số đo để gửi sau');L.ready=true;onLive.call(null,L,{serverContent:{turnComplete:true}});const m=sent.at(-1);if(!m||m.clientContent.turnComplete!==false||!/67%/.test(m.clientContent.turns[0].parts[0].text))r.push('Sam nói xong mà không gửi số đo (hoặc bắt Sam nói tiếp)');startTimer(L,{label:'Part 2',prep_seconds:0,speak_seconds:120,kind:'free'});L.task.said=' I think';const fr=L.task;if(L.task.kind!=='free'||L.task.target)r.push('bài nói tự do dùng nhầm thẻ đề cũ làm câu gốc');if(L.task!==fr)r.push('đồng hồ Part 2 tự tắt');clearInterval(L.tid);L.task=null;
+  clearInterval(L.tid);document.getElementById('examCard').hidden=true;chatTimer({label:'Task 1',minutes:20});if(!/Task 1: 20:00/.test(document.getElementById('modeText').textContent))r.push('đồng hồ bài viết không chạy');setMode('');live=lv0;return r})()`);
+check(okList(tmr), 'đồng hồ thi + thẻ đề: đo % từ khớp khi đọc to, gửi số đo cho Sam · đồng hồ bài viết', Array.isArray(tmr) ? tmr.join('; ') : JSON.stringify(tmr));
+const l2 = await ev(`(()=>{const r=[],c0=callMode,b=document.querySelector('#segMode2 .l2b');setCallMode('zh');const seen=[];for(let i=0;i<5;i++){b.click();seen.push(callMode)}
+  if(seen.join()!=='de,ko,ja,tw,zh')r.push('xoay ngôn ngữ sai: '+seen.join());
+  setCallMode('ko');if(!/Korean|TOPIK/.test(livePrompt())||!/Korean|TOPIK/.test(systemPrompt()))r.push('lời dặn tiếng Hàn sai');if(slipped('안녕하세요'))r.push('chế độ Hàn chặn nhầm Hangul');if(!slipped('สวัสดี'))r.push('chế độ Hàn không chặn chữ Thái');
+  setCallMode('de');if(!slipped('你好'))r.push('chế độ Đức không chặn chữ Hán');if(slipped('Guten Morgen, wie geht es dir?'))r.push('chế độ Đức chặn nhầm tiếng Đức');
+  setCallMode(c0);return r})()`);
+check(okList(l2), 'ngôn ngữ thứ hai: xoay Trung→Đức→Hàn→Nhật→Đài · lời dặn đúng · bộ lọc chữ đúng ngôn ngữ', Array.isArray(l2) ? l2.join('; ') : JSON.stringify(l2));
 
 const e2 = [...new Set(errs)]; check(!e2.length, 'không lỗi console / exception trong cả phiên', e2.slice(0, 4).join(' | '));
 await finish();
