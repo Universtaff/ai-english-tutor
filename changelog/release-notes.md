@@ -2,6 +2,16 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-14 · v59 — nâng cấp đợt 1 theo nghiên cứu đối thủ
+
+- Gọi không đứt ở phút ~10: bật nối lại phiên + nén ngữ cảnh của Gemini Live; nhận goAway hoặc rớt mạng thì tự nối lại (chờ 1,5 s, tối đa 3 lần liền), giữ micro, avatar, lời thoại, không chào lại. Hết lượt free thì không cố nối lại mà báo giờ hồi lượt.
+- Sam chờ người học nói xong: nhận biết hết lượt kém nhạy, im 1,5 s mới coi là xong; luật "đừng chen khi người học đang nghĩ câu" trong mọi lời dặn.
+- Tuỳ chọn "Giữ nút để nói" trong Cài đặt: Sam không bao giờ cắt lời, nhấn giữ để nói, thả ra để Sam trả lời.
+- Bớt hỏi dồn: lượt nào cũng hỏi là lời chê số 2 của mọi app → luật VARIETY (xen kể chuyện, nêu ý kiến, nhắc chuyện cũ).
+- Chế độ Học cũng nhớ buổi trước (chuyện đã kể, chủ đề đã nói, việc còn dở), không lẫn sang Cục súc.
+- Chat chữ ghim model gemini-3.5-flash-lite (bản Stable); Google gỡ thì tự lùi về bí danh cũ. Cài đặt có cảnh báo điều khoản gói free (18+, Google có thể đọc dữ liệu).
+- QA: sửa lỗi QA tự báo xanh khi đoạn kiểm văng lỗi (15 mục chạy thật trước đây có thể xanh giả); thêm 2 mục (gọi nối lại/chờ/giữ nút, model + lời dặn) → 57 mục.
+
 ## 2026-11-13 · v58 — kiểm toàn app + vá lỗi
 
 - Bấm Kết thúc lúc đang kết nối: micro, kết nối Gemini và khoá màn hình được nhả ngay (trước đây micro vẫn mở sau khi tắt).

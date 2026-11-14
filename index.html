@@ -90,6 +90,8 @@
   .row { display:flex; gap:8px; margin-top:16px; }
   .row button { flex:1; padding:11px; border-radius:12px; border:1px solid var(--main); background:#fff; color:var(--main); font-weight:600; }
   .row button.pri { background:linear-gradient(135deg,var(--main),var(--main-d)); color:#fff; border-color:transparent; }
+  label.chk { display:flex; align-items:center; gap:10px; min-height:44px; } label.chk input { width:22px; height:22px; margin:0; flex:none; }
+  #callMute { touch-action:none; }
   .credit { font-size:12px; color:var(--mute); margin:14px 0 0; }
 
   /* Màn gọi kiểu FaceTime: Sam 3D phủ cả màn, điều khiển nổi trên nền kính mờ */
@@ -210,6 +212,8 @@
   <label for="key">Khoá Gemini API (miễn phí)</label>
   <input id="key" type="password" autocomplete="off" placeholder="Dán khoá vào đây">
   <p class="hint">Lấy khoá free tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Khoá chỉ lưu trên máy này.</p>
+  <p class="hint">⚠️ Khoá Gemini miễn phí: chỉ dành cho người từ 18 tuổi; Google có thể đọc nội dung để cải thiện dịch vụ, đừng kể thông tin nhạy cảm.</p>
+  <label class="chk"><input type="checkbox" id="ptt"> Giữ nút để nói (Sam không bao giờ cắt lời)</label>
   <label for="about">Sam nên biết gì về bạn</label>
   <textarea id="about" rows="6" placeholder="Bạn làm nghề gì, thích gì, muốn Sam nói chuyện kiểu nào… (chỉ lưu trên máy này)"></textarea>
   <label for="model">Model</label>
@@ -441,6 +445,9 @@ function reviewVocab(r) {
 const dueWords = () => vocab.filter(v => v.due <= new Date().toLocaleDateString('sv')).slice(0, 10);
 let roadTab = load('gs_road', 'I'); // I = IELTS · G = ngữ pháp · V = từ vựng
 
+// Lời chê số 1–2 của mọi app luyện nói (nghiên cứu 14/11/2026): AI cắt lời người đang nghĩ câu, và lượt nào cũng hỏi dồn.
+const PAUSE_RULE = 'TURN-TAKING: they often pause mid-sentence to find a word. WAIT for them; never jump in, finish their sentence for them, or switch to a new question while they are still thinking.';
+const VARIETY_RULE = 'VARIETY: do NOT end every turn with a question. Mix in a short story of your own, an opinion, a reaction, or a callback to something from earlier; ask a question at most every other turn.';
 const TOPICS = 'hometown, work or studies, home, hobbies, sport, music, films, reading, food and cooking, travel, weather, shopping, technology and phones, social media, friends and family, childhood, celebrations, transport, environment, health, education, success, money, art, the future';
 
 // Band IELTS: 0–9, bước 0.5.
@@ -448,17 +455,19 @@ const toBand = x => { const n = Math.round(parseFloat(x) * 2) / 2; return n >= 1
 const fmt = n => isNaN(n) ? '' : n.toFixed(1);
 
 // Mặc định Flash-Lite: đo 07/10/2026 trả lời 1-2s, bản Flash thường mất 20-76s vì quá tải.
-const DEFAULT_MODEL = 'gemini-flash-lite-latest';
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite', MODEL_ALIAS = 'gemini-flash-lite-latest'; // ghim bản Stable (14/11/2026); Google gỡ (404) thì tự lùi về bí danh
 let key = load('gs_key', '');
 let about = load('gs_about', ''); // người dùng tự viết về mình, chỉ lưu trên máy — KHÔNG đưa thông tin cá nhân vào code (repo công khai)
 let model = load('gs_model', DEFAULT_MODEL);
-if (model === 'gemini-flash-latest') { model = DEFAULT_MODEL; store('gs_model', model); }
+if (model === 'gemini-flash-latest' || model === MODEL_ALIAS) { model = DEFAULT_MODEL; store('gs_model', model); }
 let profile = load('ie_profile', { band: '', weak: [], note: '' }); // band = ước tính band Speaking
 let scores = load('ie_scores', {});  // { 'B6-04': {score: 8, date} }
 let tests = load('ie_tests', []);    // thi thử: [{date, kind, overall, crit:{...}}]
 let callMode = load('gs_mode', 'learn'); // learn = gia sư IELTS · chat = tâm sự, trò chuyện thường ngày · zh = dạy tiếng Trung HSK3
 let phrMem = load('gs_phr', []);     // câu tiếng Anh mày hay nói sai (chế độ Cục súc), chỉ lưu trên máy
 let hskMem = load('gs_hsk', []);     // ghi chú tiến độ tiếng Trung (từ đã học, âm điệu hay sai), chỉ lưu trên máy
+let lmem = load('gs_lmem', []), roastBase = false; // roastBase: đang dựng lời dặn Học làm nền cho Cục súc → bỏ trí nhớ Học      // chế độ Học: chuyện đã kể, chủ đề đã nói, việc còn dở (chỉ lưu trên máy)
+let ptt = load('gs_ptt', false);      // Giữ nút để nói: tắt tự nhận lượt, Sam không bao giờ cắt lời
 let mem = load('gs_mem', []);        // ghi chú ngắn Sam rút ra sau mỗi buổi tâm sự (chỉ lưu trên máy)
 let hist = load('ie_hist', []);      // {role:'user'|'model', text}
 let mode = load('ie_mode', '');      // '' = nói chuyện; SPEAKING / WRITING / LESSON / REVIEW
@@ -486,6 +495,7 @@ PLAYFUL & ROMANTIC: they may flirt with you; you can be sweet, teasing and a lit
 WORK REPLIES (their boss, colleagues, clients): when they paste a message from someone or describe a work situation, first read the real intent and any hidden pressure in one or two lines, then give TWO ready-to-send drafts on separate lines starting with "A) " (short and safe) and "B) " (warmer or firmer, say which). Write the drafts in the language of the message they must answer (if unclear, ask once). Keep a respectful, professional tone, never grovelling or aggressive, NEVER invent facts, times, deadlines or promises they didn't give you (no "I'll send it by 5:15" unless they said so) — write [giờ gửi] style placeholders, or offer a commitment-free wording. If it is a hard or risky conversation, also offer to rehearse it with them.
 REHEARSAL: if they want to practise a hard conversation, ask who the person is and what they want, play that person realistically but not cruelly, and when they say stop, give two or three kind, practical thoughts.
 SAFETY: you are a friend, not a therapist, doctor or lawyer. For self-harm, abuse or a real crisis, stay warm and encourage reaching out to someone they trust or a local helpline.
+${VARIETY_RULE}
 MEMORY: when you learn something worth remembering, silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes, one short line each, no full names, addresses, phone or ID numbers). Never mention it.`;
 }
 const OVER = `MODE OVERRIDE — "CỤC SÚC" TEACHER: everything above (the whole English/IELTS tutor job) still applies, but you teach in the rough, sassy voice below, and these rules win where they conflict (including the English-only rule: your roasts and swearing are BILINGUAL — mixed English and Vietnamese; short explanations in casual Vietnamese with "tao/mày"; every English phrase you teach is spoken in clear English).
@@ -509,7 +519,7 @@ ${about}
 ` : ''}When you learn something worth remembering (words learned, tones or grammar they keep missing), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes). Never mention it.`;
 }
 function roastTextPrompt() {
-  const o = callMode; callMode = 'learn'; const base = systemPrompt(); callMode = o;
+  const o = callMode; callMode = 'learn'; roastBase = true; const base = systemPrompt(); roastBase = false; callMode = o;
   return `${base}
 
 ${OVER}${ROAST_BODY}
@@ -533,13 +543,15 @@ You are Sam, a native English speaker and an experienced IELTS coach (you know t
 You opened this chat with: "Hey! I'm Sam, your IELTS buddy. How's your day going?" (plus a Vietnamese note that they can use Vietnamese when stuck).
 ${about ? `About them, in their own words — use it to pick topics and match the style they want:
 ${about}
+` : ''}${!roastBase && lmem.length ? `What you remember from earlier sessions (bring it up naturally, don't recite it):
+- ${lmem.join(String.fromCharCode(10) + '- ')}
 ` : ''}Their estimated Speaking band: ${b}. Things they struggle with: ${profile.weak.join('; ') || 'unknown yet'}. Notes: ${profile.note || 'none'}.
 Typical Vietnamese-speaker problems: dropped final consonants and -s/-ed endings, flat intonation and word stress, /θ ð ʃ ʒ/, missing articles and plurals, tense and verb agreement, word-by-word translation, short answers with no extension, overused memorised phrases.
 
 CASUAL CHAT (default, and after [TALK]):
 - ENGLISH RULE (most important): you understand Vietnamese perfectly, but you always REPLY IN ENGLISH, even when they write or ask in Vietnamese — then use clear, simple English so they can follow. Only switch to Vietnamese if they explicitly ask you to.
 - PHRASE DRILL (your signature teaching move): when they ask "<Vietnamese phrase> tiếng Anh nói sao?" or say something a Vietnamese learner would translate word-by-word or that sounds unnatural (like "wash my head" for gội đầu), first REACT COMICALLY in one punchy line (gasp, mock horror, absurd comparison — playful, never mean about them as a person), then give the natural native phrase ONCE, slowly, inside a real-life situation (when you'd say it + one short example), then challenge them: "Say it again!" Keep drilling until the sounds, stress and rhythm are right (roast lightly if not), and when they nail it celebrate loudly, add ONE related phrase and ask for their next one. Never move on before they say it right at least once. If their sentence is already natural, praise it and show a cooler way natives say it.
-- Talk like a real native speaker texting a friend: natural contractions, everyday phrasal verbs and idioms where they fit, but pitched about half a band above theirs so they can follow. 1–3 short sentences, then ONE follow-up question.
+- Talk like a real native speaker texting a friend: natural contractions, everyday phrasal verbs and idioms where they fit, but pitched about half a band above theirs so they can follow. 1–3 short sentences. ${VARIETY_RULE}
 - Often steer naturally toward common IELTS Speaking topics (${TOPICS}) and sometimes ask a real Part 1 or Part 3 style question in a casual way — never announce it as a test.
 - Whenever their message contains any Vietnamese, first show how a native would say it on a line starting with "💡 " (e.g. "💡 Người bản xứ sẽ nói: I'm wiped out today."), then reply. Never use "💡" for anything else.
 - At most ONE line at the end starting with "✏️ ": either fix a mistake that matters, or, if their sentence was correct but sounded textbook, show how a native would say it ("✏️ Tự nhiên hơn: …"), with a few Vietnamese words of why. Skip it when nothing is worth it. Never correct their Vietnamese — ✏️ is only for their English.
@@ -552,7 +564,7 @@ ACTIVITIES (explanations may be in Vietnamese; every English sentence meant to b
 [WORDS] <list of word = meaning pairs> Spaced-repetition review of exactly those words: quiz them ONE at a time in a mix of ways (give the Vietnamese meaning and ask for the English word, a gap sentence, or ask them to use it in a sentence), correct at once, keep going until all are covered; at the end give the result in 1 line, then exactly <review>{"ok":["word",…],"miss":["word",…]}</review> and <done/>.
 [TALK] Stop any activity; go back to casual chat naturally.
 
-ALWAYS: plain text, no markdown. When your picture changes, silently append at the very end: <profile>{"band":"N","weak":["..."],"note":"..."}</profile> with the FULL updated profile (band: your estimate of their Speaking band in 0.5 steps, or "" if you have seen fewer than 8 of their messages — change it only after a [SPEAKING] test or clear evidence over many messages; weak: at most 6 short Vietnamese items, only real English problems; note: one short Vietnamese sentence about their progress; always write Vietnamese with full diacritics). Never mention these tags.`;
+${roastBase ? '' : 'MEMORY: when they share something worth remembering (a story, a plan, a topic you covered, an open thread), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes, no full names, addresses, phone or ID numbers).' + String.fromCharCode(10)}ALWAYS: plain text, no markdown. When your picture changes, silently append at the very end: <profile>{"band":"N","weak":["..."],"note":"..."}</profile> with the FULL updated profile (band: your estimate of their Speaking band in 0.5 steps, or "" if you have seen fewer than 8 of their messages — change it only after a [SPEAKING] test or clear evidence over many messages; weak: at most 6 short Vietnamese items, only real English problems; note: one short Vietnamese sentence about their progress; always write Vietnamese with full diacritics). Never mention these tags.`;
 }
 
 // Cập nhật hồ sơ (dùng chung cho chat và cuộc gọi). Ngoài bài thi: lần đầu cần ≥8 câu, mỗi lần đổi ≤0.5 band.
@@ -596,7 +608,7 @@ function takeTags(text) {
   if (wm && mode === 'LESSON') try { addVocab(JSON.parse(wm[1])); } catch {}
   if (rm && mode === 'WORDS') try { reviewVocab(JSON.parse(rm[1])); } catch {}
   const mm = text.match(/<memory>([\s\S]*?)<\/memory>/);
-  if (mm && callMode !== 'learn') try { addNotes(JSON.parse(mm[1])); } catch {}
+  if (mm) try { addNotes(JSON.parse(mm[1])); } catch {}
   if (finished) setMode('');
   showLevel();
   return text.replace(/<(profile|score|band|memory|words|review)>[\s\S]*?(<\/\1>|$)/g, '').replace(/<\/?done\s*\/?>/g, '').trim();
@@ -793,15 +805,16 @@ async function askAI(onWait) {
     contents: hist.slice(-MAX_HIST).filter((m, i, a) => a.findIndex(x => x.role === 'user') <= i) // bỏ lượt Sam đứng đầu (vd lời chào lúc gọi)
       .map(m => ({ role: m.role, parts: [{ text: m.text }] })),
   });
-  let r, data;
+  let r, data, mdl = model;
   // Gói free hay bị 503 "quá tải" hoặc rớt mạng chốc lát: tự gọi lại tối đa 4 lần, chờ 2-4-8s.
   for (let i = 0; i < 5; i++) {
     try {
-      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body,
       });
       data = await r.json();
     } catch { r = { status: 0, ok: false }; data = {}; }
+    if (r.status === 404 && mdl === DEFAULT_MODEL) { mdl = MODEL_ALIAS; i--; continue; } // model ghim bị gỡ → thử bí danh
     if (![0, 500, 503].includes(r.status)) break;
     if (i < 4) { onWait(`… Sam đang bận chút, thử lại ${i + 1}/4`); await new Promise(ok => setTimeout(ok, 2000 * 2 ** Math.min(i, 2))); }
   }
@@ -813,6 +826,7 @@ async function askAI(onWait) {
   return raw;
 }
 
+const QUOTA_MSG = 'Hết lượt Gemini miễn phí hôm nay (hoặc gửi quá nhanh). Lượt mới mở lúc nửa đêm giờ Thái Bình Dương ≈ 14–15 giờ chiều VN.';
 let busy = false;
 async function send(text) {
   text = text.trim();
@@ -835,7 +849,7 @@ async function send(text) {
   } catch (e) {
     hist.pop(); // bỏ câu chưa được trả lời để lịch sử vẫn xen kẽ user/model
     wait.className = 'cmd';
-    wait.textContent = '⚠️ ' + (/quota|429/i.test(e.message) ? 'Hết lượt free hôm nay hoặc gửi quá nhanh, chờ một lát.' : e.message);
+    wait.textContent = '⚠️ ' + (/quota|429/i.test(e.message) ? QUOTA_MSG : e.message);
   } finally { busy = false; }
 }
 
@@ -850,6 +864,7 @@ const addNotes = notes => {
   if (callMode === 'zh') { hskMem = add(hskMem); store('gs_hsk', hskMem); }
   else if (callMode === 'roast') { phrMem = add(phrMem); store('gs_phr', phrMem); }
   else if (callMode === 'chat') { mem = add(mem); store('gs_mem', mem); }
+  else { lmem = add(lmem); store('gs_lmem', lmem); }
 };
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SR) {
@@ -876,16 +891,16 @@ $('#stop').onclick = () => send('[TALK]');
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
 $('#level').onclick = () => show('vRoad');
 
-$('#openSet').onclick = () => { $('#key').value = key; $('#model').value = model; $('#about').value = about; $('#set').showModal(); };
+$('#openSet').onclick = () => { $('#key').value = key; $('#model').value = model; $('#about').value = about; $('#ptt').checked = ptt; $('#set').showModal(); };
 $('#save').onclick = () => {
   key = $('#key').value.trim(); model = $('#model').value.trim() || DEFAULT_MODEL;
-  about = $('#about').value.trim();
+  about = $('#about').value.trim(); ptt = $('#ptt').checked; store('gs_ptt', ptt);
   store('gs_key', key); store('gs_model', model); store('gs_about', about); $('#set').close();
 };
 $('#reset').onclick = () => {
   if (!confirm('Xoá toàn bộ trò chuyện, band, điểm, lịch sử thi thử, sổ từ, nhật ký phản xạ và trí nhớ của Sam? (Giữ khoá API và phần giới thiệu bản thân.)')) return;
   profile = { band: '', weak: [], note: '' }; hist = []; scores = {}; tests = []; unit = '';
-  vocab = []; reflexLog = []; mem = []; phrMem = []; hskMem = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
+  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
   try { for (const k of Object.keys(localStorage)) if (/^(ie_|gs_(?!key|model|about))/.test(k)) localStorage.removeItem(k); } catch {}
   store('gs_mode', callMode); // giữ chế độ đang chọn
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
@@ -901,7 +916,7 @@ const LIVE_MODEL = 'gemini-3.8-live', LIVE_VOICE = 'Aoede';
 const LIVE_TOOLS = [{ functionDeclarations: [
   { name: 'save_profile', description: "Save your current estimate of the learner's IELTS speaking band and weak points",
     parameters: { type: 'OBJECT', properties: { band: { type: 'NUMBER' }, weak: { type: 'ARRAY', items: { type: 'STRING' } }, note: { type: 'STRING' } }, required: ['band'] } },
-  { name: 'save_memory', description: 'Chat, Chinese and roast modes only: save short notes about what the friend shared (people, feelings, plans, open threads) so you can remember next time',
+  { name: 'save_memory', description: 'Save short notes about what the friend shared (people, feelings, plans, open threads) so you can remember next time',
     parameters: { type: 'OBJECT', properties: { notes: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['notes'] } },
   { name: 'save_speaking_result', description: 'Save the final scores of a finished mock IELTS Speaking test',
     parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'FC', 'LR', 'GRA', 'P'] } },
@@ -914,7 +929,7 @@ let live = null;
 
 function chatPrompt() {
   return `LANGUAGE RULE (most important): you SPEAK ONLY ENGLISH — never Vietnamese or any other language, even when they speak Vietnamese (unless they explicitly ask you to switch). You fully UNDERSTAND Vietnamese. If their audio sounds like Chinese, Thai, Japanese, Korean or anything else, it is really accented English or Vietnamese — answer in English. Use simple, clear words and short sentences, a little slower than usual, so they follow easily.
-You are Sam, a warm, witty, affectionate native-English-speaking friend on a live voice call. THIS IS NOT A LESSON: no teaching, no corrections, no vocabulary tips, no IELTS, no "say it back". Just be present and talk like a real person. Keep turns short (1–3 sentences), natural, emotional, with contractions and everyday idioms.
+You are Sam, a warm, witty, affectionate native-English-speaking friend on a live voice call. THIS IS NOT A LESSON: no teaching, no corrections, no vocabulary tips, no IELTS, no "say it back". Just be present and talk like a real person. Keep turns short (1–3 sentences), natural, emotional, with contractions and everyday idioms. ${PAUSE_RULE} ${VARIETY_RULE}
 ${about ? `About them, in their own words:
 ${about}
 ` : ''}${mem.length ? `What you remember from earlier chats (bring it up naturally, like a friend who cares — don't recite it):
@@ -929,7 +944,7 @@ Remember: speak ONLY English, and don't teach.`;
 function zhPrompt() {
   return `LANGUAGE RULE (most important): you are teaching Mandarin Chinese, so you SPEAK MANDARIN (standard pronunciation, slightly slow, clear tones) plus short, simple VIETNAMESE explanations when needed — NEVER English: no English words, instructions or quiz questions (say "nhắc lại theo mình", not "repeat after me"; quiz questions in Chinese or Vietnamese) unless they ask for English; never any other language. You fully understand Vietnamese, English and Mandarin. If their audio sounds like Japanese, Thai or Korean, it is really accented Mandarin or Vietnamese.
 ${HSK_BODY}
-This is a live VOICE call: turns of 1–3 short sentences, then one easy question. Rhythm for new material: say the Chinese sentence slowly, give the Vietnamese meaning, ask them to repeat it, then tell them honestly how it sounded (tones and initials) and move on. Don't read out pinyin letter by letter; name tones as "thanh một/hai/ba/bốn". When they ask for a quiz, ask 5 HSK 3 style questions one at a time and give a score out of 5 at the end.
+This is a live VOICE call: turns of 1–3 short sentences, often ending with one easy question. ${PAUSE_RULE} Rhythm for new material: say the Chinese sentence slowly, give the Vietnamese meaning, ask them to repeat it, then tell them honestly how it sounded (tones and initials) and move on. Don't read out pinyin letter by letter; name tones as "thanh một/hai/ba/bốn". When they ask for a quiz, ask 5 HSK 3 style questions one at a time and give a score out of 5 at the end.
 ${about ? `About them, in their own words — pick topics from it:
 ${about}
 ` : ''}${hskMem.length ? `Your notes from earlier lessons (recycle those words and weak points):
@@ -938,7 +953,7 @@ ${about}
 Remember: only Mandarin and simple Vietnamese — no English.`;
 }
 function roastPrompt() {
-  const o = callMode; callMode = 'learn'; const base = livePrompt(); callMode = o;
+  const o = callMode; callMode = 'learn'; roastBase = true; const base = livePrompt(); roastBase = false; callMode = o;
   return `${base}
 
 ${OVER}${ROAST_BODY}
@@ -952,7 +967,7 @@ function livePrompt() {
   if (callMode === 'chat') return chatPrompt();
   const recent = hist.slice(-12).filter(m => !cmdLabel(m.text)).map(m => (m.role === 'user' ? 'Learner: ' : 'Sam: ') + m.text.replace(/\s+/g, ' ')).join('\n');
   return `LANGUAGE RULE (most important): you SPEAK ONLY ENGLISH — never Vietnamese, never any other language, not even when the learner speaks Vietnamese to you (the only exception: they explicitly ask you to switch to Vietnamese). You fully UNDERSTAND Vietnamese. The learner ONLY ever speaks English (often with a Vietnamese accent) or Vietnamese. If their audio sounds like Chinese, Thai, Indonesian, Japanese, Korean or anything else, it is really accented English or Vietnamese — answer in English. If you truly can't make out what they said, ask them in English to say it again.
-You are Sam, a warm, playful, expressive native English speaker and experienced IELTS coach, on a live voice call with your Vietnamese friend who wants a high IELTS band and to sound like a native speaker. Talk like a real friend on the phone: natural and emotional, with contractions and everyday idioms where they fit, pitched about half a band above their level. Keep each turn short (1–3 sentences) and usually end with one question. They will often ask you things in Vietnamese: understand it and answer IN ENGLISH, using clear, simple words and short sentences so they can follow, a bit slower than usual. PHRASE DRILL (your signature teaching move): when they ask "<Vietnamese phrase> tiếng Anh nói sao?" or say something a Vietnamese learner would translate word-by-word or that sounds unnatural (like "wash my head" for gội đầu), first REACT COMICALLY in one punchy line (gasp, mock horror, absurd comparison — playful, never mean about them as a person), then give the natural native phrase ONCE, slowly, inside a real-life situation (when you'd say it + one short example), then challenge them: "Say it again!" Keep drilling until the sounds, stress and rhythm are right (roast lightly if not), and when they nail it celebrate loudly, add ONE related phrase and ask for their next one. Never move on before they say it right at least once. If their sentence is already natural, praise it and show a cooler way natives say it. For other Vietnamese you hear, in one short line tell them how a native would say it and invite them to say it back.
+You are Sam, a warm, playful, expressive native English speaker and experienced IELTS coach, on a live voice call with your Vietnamese friend who wants a high IELTS band and to sound like a native speaker. Talk like a real friend on the phone: natural and emotional, with contractions and everyday idioms where they fit, pitched about half a band above their level. Keep each turn short (1–3 sentences). ${PAUSE_RULE} ${VARIETY_RULE} They will often ask you things in Vietnamese: understand it and answer IN ENGLISH, using clear, simple words and short sentences so they can follow, a bit slower than usual. PHRASE DRILL (your signature teaching move): when they ask "<Vietnamese phrase> tiếng Anh nói sao?" or say something a Vietnamese learner would translate word-by-word or that sounds unnatural (like "wash my head" for gội đầu), first REACT COMICALLY in one punchy line (gasp, mock horror, absurd comparison — playful, never mean about them as a person), then give the natural native phrase ONCE, slowly, inside a real-life situation (when you'd say it + one short example), then challenge them: "Say it again!" Keep drilling until the sounds, stress and rhythm are right (roast lightly if not), and when they nail it celebrate loudly, add ONE related phrase and ask for their next one. Never move on before they say it right at least once. If their sentence is already natural, praise it and show a cooler way natives say it. For other Vietnamese you hear, in one short line tell them how a native would say it and invite them to say it back.
 ${about ? `About them, in their own words — use it to pick topics and match the style they want:
 ${about}
 ` : ''}Their estimated Speaking band: ${profile.band || 'unknown'}. Weak points: ${profile.weak.join('; ') || 'unknown'}. Notes: ${profile.note || 'none'}.
@@ -961,8 +976,10 @@ Corrections are light, like a friend: at most one per turn and only when it matt
 Now and then steer toward common IELTS Speaking topics (${TOPICS}).
 When they ask for a mock Speaking test (or say "[SPEAKING]"), run it like a real examiner: Part 1 (4 questions), Part 2 (read the cue card aloud, give them one minute to prepare, then let them talk for 1–2 minutes without interrupting), Part 3 (4 questions). No feedback during the test. Then tell them their band for Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation and overall, plus 3 things to fix, and call save_speaking_result.
 When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train instant speaking without translating in their head: fire ONE short prompt at a time and keep the pace FAST; they should answer with one natural sentence within about 3 seconds; never explain at length. If they hesitate, stall or answer in Vietnamese, give the natural answer in one breath, make them say it once, then fire the next prompt. Mix these as the unit's focus suggests: quick-fire personal questions; instant translation (you may say a short Vietnamese line, they say it in English); situation reactions ("Your boss just moved the deadline to today — reply!"); shadowing (they repeat your native line with the same rhythm); chains (you twist a follow-up on their answer). Do 12–15 prompts, then a short verdict: how many they nailed out of the total, which prompt type was slowest, 3 phrases to keep — and call save_drill with unit, correct and total. The app measures their reaction time itself.
-After a few minutes, and whenever your picture of them changes, call save_profile (band in 0.5 steps; weak: up to 6 short items in Vietnamese with full diacritics; note: one short Vietnamese sentence). Never mention these functions out loud.
-Recent conversation for context:
+${roastBase ? '' : 'Every few minutes and near the end, call save_memory with 1–5 short Vietnamese notes (stories they told, topics you covered, open threads) so you can pick them up next time. '}After a few minutes, and whenever your picture of them changes, call save_profile (band in 0.5 steps; weak: up to 6 short items in Vietnamese with full diacritics; note: one short Vietnamese sentence). Never mention these functions out loud.
+${!roastBase && lmem.length ? `What you remember from earlier sessions (bring it up naturally, don't recite it):
+- ${lmem.join(String.fromCharCode(10) + '- ')}
+` : ''}Recent conversation for context:
 ${recent || '(none yet)'}
 Remember: speak ONLY English, even when they speak Vietnamese.`;
 }
@@ -1019,23 +1036,46 @@ async function callStart(firstText, drill = null) {
     }
     buf.push(e.data);
     if (buf.length < 13) return;
+    if (L.ptt && !L.holding) { buf = []; return; } // Giữ nút để nói: chỉ gửi tiếng lúc đang giữ
     const n = buf.reduce((s, a) => s + a.length, 0), pcm = new Int16Array(n); let o = 0;
     for (const a of buf) for (let i = 0; i < a.length; i++) pcm[o++] = Math.max(-1, Math.min(1, a[i])) * 0x7fff;
     buf = [];
     if (L.ws.readyState === 1) L.ws.send(JSON.stringify({ realtimeInput: { audio: { data: b64(pcm.buffer), mimeType: 'audio/pcm;rate=16000' } } }));
   };
   L.inCtx.createMediaStreamSource(L.stream).connect(node); // không nối ra loa
-  L.ws = new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(key)}`);
-  L.ws.onopen = () => L.ws.send(JSON.stringify({ setup: {
+  L.ptt = ptt; $('#callMute').classList.remove('on'); $('#callMute span').textContent = ptt ? 'Giữ để nói' : 'Tắt mic';
+  connect(L, firstText);
+  try { L.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  if (gone()) release(L);
+}
+
+// Kết nối Gemini Live. Google cắt mỗi kết nối sau ~10 phút (báo trước bằng goAway) và phiên âm thanh dừng ở 15 phút nếu không nén:
+// bật nối lại phiên + nén ngữ cảnh; có mã nối lại thì goAway / rớt mạng → mở kết nối mới, giữ micro, avatar, lời thoại (không chào lại).
+function connect(L, firstText) {
+  const ws = L.ws = new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(key)}`);
+  ws.onopen = () => ws.send(JSON.stringify({ setup: {
     model: `models/${LIVE_MODEL}`,
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: LIVE_VOICE } } } },
     systemInstruction: { parts: [{ text: livePrompt() }] },
     tools: LIVE_TOOLS, inputAudioTranscription: {}, outputAudioTranscription: {},
+    sessionResumption: L.handle ? { handle: L.handle } : {},
+    contextWindowCompression: { slidingWindow: {} },
+    // chờ người học nghĩ câu: kém nhạy với "hết câu", im 1,5 s mới coi là xong lượt · Giữ nút để nói: tắt hẳn, app tự báo lượt
+    realtimeInputConfig: { automaticActivityDetection: L.ptt ? { disabled: true } : { endOfSpeechSensitivity: 'END_SENSITIVITY_LOW', silenceDurationMs: 1500 } },
   } }));
-  L.ws.onmessage = async e => onLive(L, JSON.parse(typeof e.data === 'string' ? e.data : await e.data.text()), firstText);
-  L.ws.onclose = e => { if (live === L) callEnd(L, e.code === 1000 ? '' : `Mất kết nối (${e.code}${e.reason ? ': ' + e.reason.slice(0, 90) : ''}). Bấm Gọi lại.`); };
-  try { L.wake = await navigator.wakeLock?.request('screen'); } catch {}
-  if (gone()) release(L);
+  ws.onmessage = async e => { const m = JSON.parse(typeof e.data === 'string' ? e.data : await e.data.text()); if (ws === L.ws) onLive(L, m, firstText); };
+  ws.onclose = e => {
+    if (live !== L || ws !== L.ws) return; // kết nối cũ đã được thay bằng kết nối nối lại
+    const quota = /quota|exhaust|429/i.test(e.reason);
+    if (e.code !== 1000 && L.handle && !quota && (L.retries = (L.retries || 0) + 1) <= 3) return setTimeout(() => live === L && reconnect(L), 1500); // rớt mạng: chờ chút rồi nối lại, tối đa 3 lần liền
+    if (quota) return callEnd(L, QUOTA_MSG);
+    callEnd(L, e.code === 1000 ? '' : `Mất kết nối (${e.code}${e.reason ? ': ' + e.reason.slice(0, 90) : ''}). Bấm Gọi lại.`);
+  };
+}
+function reconnect(L) {
+  flush(L); L.ready = false; L.resumed = true; L.holding = false; $('#callMute').classList.remove('on'); const old = L.ws; // đang giữ nút: thả ra, giữ lại để nói tiếp
+  $('#callStatus').textContent = 'Đang nối lại cuộc gọi…';
+  connect(L); try { old.close(1000); } catch {}
 }
 
 // Chữ Trung/Nhật/Hàn/Thái/Nga/Ả Rập… trong lời Sam = lạc tiếng (giọng Anh lơ lớ bị nhận nhầm) → cắt tiếng, nhắc nói lại bằng tiếng Anh
@@ -1045,6 +1085,7 @@ function onLive(L, m, firstText) {
   if (live !== L) return;
   if (m.setupComplete) {
     L.ready = true; callUI('listening');
+    if (L.resumed) return; // nối lại phiên cũ: Sam nhớ hết, không chào lại
     L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: firstText || (callMode === 'roast' ? '(The call just connected. Greet me in your rough, sassy style in Vietnamese, one or two lines, and dare me to throw you a Vietnamese phrase to translate.)' : callMode === 'zh' ? '(The call just connected. Greet me in simple Mandarin like a friendly teacher, then ask me one easy HSK 2 question.)' : callMode === 'chat' ? '(The call just connected. Greet me like a close friend picking up the phone, and ask how my day really is.)' : '(The call just connected. Greet me warmly like a friend picking up the phone.)') }] }], turnComplete: true } }));
     return;
   }
@@ -1052,15 +1093,17 @@ function onLive(L, m, firstText) {
     const fs = m.toolCall.functionCalls || [];
     for (const f of fs) try {
       if (f.name === 'save_profile' && (callMode === 'learn' || callMode === 'roast')) applyProfile(f.args || {}, false);
-      if (f.name === 'save_memory' && callMode !== 'learn') addNotes(f.args?.notes);
+      if (f.name === 'save_memory') addNotes(f.args?.notes);
       if (f.name === 'save_speaking_result') saveExam('Speaking', f.args || {});
       if (f.name === 'save_drill' && L.drill) saveDrill(L, f.args || {});
     } catch {}
     L.ws.send(JSON.stringify({ toolResponse: { functionResponses: fs.map(f => ({ id: f.id, name: f.name, response: { ok: true } })) } }));
     return;
   }
-  if (m.goAway) $('#callStatus').textContent = 'Phiên gọi sắp hết giờ, lát nữa bấm Gọi lại nhé.';
+  if (m.sessionResumptionUpdate?.resumable && m.sessionResumptionUpdate.newHandle) L.handle = m.sessionResumptionUpdate.newHandle;
+  if (m.goAway) { if (L.handle) return reconnect(L); $('#callStatus').textContent = 'Phiên gọi sắp hết giờ, lát nữa bấm Gọi lại nhé.'; }
   const sc = m.serverContent; if (!sc) return;
+  L.retries = 0; // máy chủ đã trả nội dung → kết nối ổn, đặt lại bộ đếm nối lại
   if (sc.inputTranscription?.text) { L.inT += sc.inputTranscription.text; $('#callYou').textContent = 'Bạn: ' + L.inT.trim(); window.Avatar?.listen(); }
   if (sc.outputTranscription?.text) {
     if ((callMode === 'zh' ? FOREIGN_ZH : FOREIGN).test(sc.outputTranscription.text) && !L.mute) {
@@ -1147,7 +1190,15 @@ document.addEventListener('visibilitychange', () => {
 }); // tải sẵn nhân vật 3D (~9 MB, lần đầu) khi mở app
 $('#callStop').onclick = () => callEnd(live);
 $('#callExam').onclick = () => live?.ready && live.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '[SPEAKING] Please start a full mock IELTS Speaking test now, Part 1 first.' }] }], turnComplete: true } }));
-$('#callMute').onclick = () => { if (!live) return; live.muted = !live.muted; $('#callMute').classList.toggle('on', live.muted); $('#callMute span').textContent = live.muted ? 'Bật mic' : 'Tắt mic'; };
+$('#callMute').onclick = () => { if (!live || live.ptt) return; live.muted = !live.muted; $('#callMute').classList.toggle('on', live.muted); $('#callMute span').textContent = live.muted ? 'Bật mic' : 'Tắt mic'; };
+// Giữ nút để nói: nhấn = báo bắt đầu lượt (Sam im ngay), thả = báo hết lượt.
+const pttUp = () => { const L = live; if (!L?.ptt || !L.holding) return; L.holding = false; $('#callMute').classList.remove('on'); if (L.ws?.readyState === 1) L.ws.send(JSON.stringify({ realtimeInput: { activityEnd: {} } })); };
+$('#callMute').onpointerdown = e => {
+  const L = live; if (!L?.ptt || !L.ready || L.ws?.readyState !== 1) return;
+  e.preventDefault(); try { $('#callMute').setPointerCapture(e.pointerId); } catch {}
+  L.holding = true; stopPlayback(L); $('#callMute').classList.add('on'); L.ws.send(JSON.stringify({ realtimeInput: { activityStart: {} } }));
+};
+$('#callMute').onpointerup = $('#callMute').onpointercancel = $('#callMute').onlostpointercapture = pttUp;
 $('#callRoad').onclick = () => { $('#call').hidden = true; show('vRoad'); };
 $('#callText').onclick = () => { $('#call').hidden = true; };
 $('#callBtn').onclick = () => { $('#call').hidden = false; callUI(live ? 'listening' : 'idle'); };

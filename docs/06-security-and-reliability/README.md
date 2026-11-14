@@ -26,6 +26,7 @@
 | `buc.glb` không tải | Đĩa ngọc trơn |
 | Open-Meteo lỗi/offline | Thời tiết "quang" |
 | Mocap không tải | Không cử chỉ mocap, các cử chỉ khác vẫn chạy |
-| Mất Gemini Live | Thông báo, bấm Gọi lại |
+| Mất Gemini Live | Có mã nối lại: tự nối lại (≤ 3 lần liên tiếp, giữ micro + avatar). Không có / quá 3 lần: thông báo, bấm Gọi lại |
+| Hết lượt Gemini free (429) | Báo hết lượt + giờ hồi lượt (≈ 14–15 giờ chiều VN) |
 | Sam lỡ nói ngôn ngữ lạ | Cắt tiếng, nhắc nói lại tiếng Anh |
 | `localStorage` bị chặn | Vẫn chạy, không nhớ |

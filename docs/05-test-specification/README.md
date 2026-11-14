@@ -22,6 +22,11 @@
 | A-lang | Luật "chỉ nói tiếng Anh" có trong lời dặn; `FOREIGN` bắt đúng; |
 | A-chat | Dòng 💡 ✏️ 🗣 có kiểu riêng; tab IELTS và Cài đặt mở được |
 | A-console | Không lỗi console/exception cả phiên |
+| A-resume | Giả lập máy chủ Live: setup có sessionResumption + contextWindowCompression; goAway / đóng 1006 → kết nối mới dùng mã nối lại, không chào lại, micro còn mở; đóng do hết lượt → kết thúc + báo giờ hồi; quá 3 lần nối lại liền → kết thúc |
+| A-turn | setup có automaticActivityDetection (END_SENSITIVITY_LOW, silenceDurationMs ≥ 1200); bật Giữ nút → disabled + giữ/thả gửi activityStart/activityEnd; nút không kẹt sáng khi nối lại / sang cuộc gọi sau |
+| A-memory | Mọi lời dặn có TURN-TAKING (+ VARIETY trừ HSK3); chế độ Học lưu + đưa trí nhớ vào lời dặn, không lẫn sang Cục súc |
+| A-model | DEFAULT_MODEL = gemini-3.5-flash-lite; 404 → thử bí danh gemini-flash-lite-latest; Cài đặt có cảnh báo 18+ |
+| (luật QA) | Mục kiểm chạy thật phải trả về danh sách rỗng mới xanh; văng lỗi / quá giờ = ĐỎ (`okList`) |
 Giới hạn: headless vẽ chậm → KHÔNG đo được fps máy thật. Điều kiện chờ dùng vòng lặp thăm dò, không `sleep` cố định.
 
 ## Tay trên điện thoại thật (trước mỗi bản lớn) — chi tiết ở `tests/may-that.md`
