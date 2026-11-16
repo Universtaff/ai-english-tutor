@@ -29,6 +29,9 @@
 | A-exam | Nạp đủ 4 tệp data; đổi kỳ thi TOEFL/civics → lời dặn chat + gọi có EXAM FOCUS (civics: 20 câu); thẻ `<score2>` lưu lịch sử dạng khoảng; tab Kỳ thi có chọn kỳ thi + bảng đích đến |
 | A-timer | `wordMatch` đúng (5/6 từ = 83%, báo từ thiếu); `start_timer` + lời chép → xong sớm hiện % khớp và gửi số đo cho Sam (không bắt Sam nói); thẻ `<timer>` đếm giờ trên thanh chế độ |
 | A-l2 | Nút ngôn ngữ xoay Trung → Đức → Hàn → Nhật → Đài; lời dặn đúng ngôn ngữ; bộ lọc chữ: Hàn cho Hangul, chặn chữ Thái; Đức chặn chữ Hán |
+| A-recap | Giả lập Gemini: hết buổi gọi ≥ 3 lượt → thẻ 📝 tóm tắt, lỗi vào sổ lỗi, từ vào sổ từ, tóm tắt vào trí nhớ; `[FIXES]` + thẻ `<review>` dời lịch ôn lỗi |
+| A-honest | Lời dặn IELTS có BAND GUIDE + khoảng band + luật bài yếu; thẻ band lưu `range`; điểm thi thật vào lời dặn hiệu chỉnh |
+| A-pron | Giả lập Gemini: `pronCheck` gửi `inline_data` âm thanh + câu gốc, hiện độ rõ ★ + từ đọc sai + nhãn ước lượng |
 | (luật QA) | Mục kiểm chạy thật phải trả về danh sách rỗng mới xanh; văng lỗi / quá giờ = ĐỎ (`okList`) |
 Giới hạn: headless vẽ chậm → KHÔNG đo được fps máy thật. Điều kiện chờ dùng vòng lặp thăm dò, không `sleep` cố định.
 

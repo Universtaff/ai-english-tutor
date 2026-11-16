@@ -9,6 +9,7 @@
 - Mã chạy từ CDN phải khoá đúng phiên bản (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0); không trỏ vào nhánh (`@main`).
 - Service worker xoá cache của phiên bản cũ khi phiên bản mới kích hoạt.
 - Đề thi: Sam chỉ tả khuôn đề và tự soạn câu hỏi cùng dạng; KHÔNG chép câu hỏi, bài mẫu, bảng tiêu chí nguyên văn của ETS/Pearson/Duolingo/Cambridge vào repo công khai. Bộ civics USCIS là tài liệu công của chính phủ Mỹ nên được chép, có ghi nguồn.
+- Ghi âm đọc theo (🎙) chỉ bật khi người dùng bấm, tự dừng sau 15 s, gửi một lần cho Gemini rồi bỏ, không lưu trên máy. Tóm tắt buổi gọi gửi lời thoại của chính buổi đó cho Gemini (cùng khoá free, Google có thể đọc).
 - Mọi điểm của kỳ thi khác IELTS hiện dạng khoảng và ghi rõ là ước lượng của Sam, không phải điểm chính thức.
 
 ## Giấy phép

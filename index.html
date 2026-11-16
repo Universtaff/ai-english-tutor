@@ -46,6 +46,8 @@
   .say { color:var(--main); font-weight:600; }
   .fix { display:block; background:var(--fix); border-left:3px solid #f59e0b; border-radius:8px; padding:5px 9px; margin:6px 0 2px; font-size:14.5px; }
   .fix.tip { background:var(--tip); border-left-color:#3b82f6; margin:0 0 6px; }
+  .ai .play.on { background:#dc2626; color:#fff; animation:pulse 1s ease-in-out infinite; }
+  .real { display:flex; gap:8px; margin-top:10px; } .real select, .real input { flex:1; min-width:0; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:6px 10px; font:inherit; background:#fff; } .real button { min-height:44px; border:1px solid var(--main); background:#fff; color:var(--main); border-radius:12px; padding:0 12px; font-weight:600; }
   .ai .play { display:inline-grid; place-items:center; width:40px; height:40px; margin-top:4px; border:0; border-radius:50%; background:var(--me); font-size:14px; }
   #modebar { display:flex; align-items:center; gap:8px; background:var(--me); color:var(--main); padding:7px 12px; font-size:13.5px; font-weight:600; border-top:1px solid var(--line); }
   #modebar span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -432,6 +434,8 @@ function startDrill(id) {
 const BOX_DAYS = [1, 3, 7, 14, 30];
 const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv'); };
 let vocab = load('gs_vocab', []);
+let fixes = load('gs_fix', []);        // sổ lỗi rút từ buổi gọi {w: câu sai, b: câu tự nhiên, why, box, due} — ôn cách quãng như sổ từ
+let realScores = load('gs_real', []);  // điểm thi IELTS thật người học tự nhập {date, kind, band}
 function addVocab(list) {
   for (const x of list || []) {
     const [w, ...m] = String(x).split('='), word = w.trim().toLowerCase().slice(0, 40);
@@ -447,6 +451,20 @@ function reviewVocab(r) {
   }
   store('gs_vocab', vocab);
 }
+function addFixes(list) {
+  for (const f of list || []) {
+    const w = String(f?.wrong || '').trim().slice(0, 120), b = String(f?.better || '').trim().slice(0, 120);
+    if (w && b && !fixes.some(x => x.b.toLowerCase() === b.toLowerCase())) fixes.push({ w, b, why: String(f.why || '').slice(0, 120), box: 0, due: addDays(1) });
+  }
+  fixes = fixes.slice(-200); store('gs_fix', fixes);
+}
+function reviewFixes(r) {
+  const nk = x => String(x).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); // bỏ dấu câu, nháy, khoảng trắng thừa
+  const low = a => new Set((a || []).map(nk)), ok = low(r?.ok), miss = low(r?.miss);
+  for (const f of fixes) { const k = nk(f.b); if (ok.has(k)) { f.box = Math.min(4, f.box + 1); f.due = addDays(BOX_DAYS[f.box]); } else if (miss.has(k)) { f.box = 0; f.due = addDays(1); } }
+  store('gs_fix', fixes);
+}
+const dueFixes = () => fixes.filter(f => f.due <= new Date().toLocaleDateString('sv')).slice(0, 8);
 const dueWords = () => vocab.filter(v => v.due <= new Date().toLocaleDateString('sv')).slice(0, 10);
 let roadTab = load('gs_road', 'I'); // I = IELTS · G = ngữ pháp · V = từ vựng
 
@@ -486,6 +504,9 @@ const MAX_HIST = 40; // ponytail: chỉ gửi 40 lượt gần nhất; band & đ
 const today = () => new Date().toLocaleDateString('sv');
 const CRIT = { Speaking: ['FC', 'LR', 'GRA', 'P'], Writing: ['TA', 'CC', 'LR', 'GRA'] };
 
+// Bảng mô tả band IELTS (DIỄN ĐẠT LẠI, không chép nguyên văn) + luật chống thổi điểm — nghiên cứu 14/11: AI hay lệch 0,5–2 band, bài yếu bị thổi.
+const IELTS_GUIDE = `BAND GUIDE (paraphrased from the public IELTS descriptors; be strict, weak or short answers must NOT get 7+): FC — 5 slow, much repetition and self-correction, simple linkers; 6 willing to speak at length but loses coherence at times; 7 speaks at length without noticeable effort, flexible linkers; 8 fluent, only occasional repetition, topics developed coherently. LR — 5 limited vocabulary, pauses to search for words; 6 enough to discuss topics, paraphrase with mixed success; 7 some less common words and idioms with awareness of style, some wrong choices; 8 wide and precise, idioms used skilfully, rare slips. GRA — 5 basic forms mostly right, complex forms rare and faulty; 6 mix of simple and complex, frequent errors in complex forms; 7 a range of complex structures, many error-free sentences; 8 wide range, most sentences error-free. P (only estimated from text, so stay cautious) — 5 sometimes hard to follow; 6 generally understood, mixed control; 7 easy to understand, accent has little effect; 8 easy throughout. Writing TA/TR, CC, LR, GRA follow the same ladder (5 partial, 6 adequate with lapses, 7 clear and flexible, 8 well developed with rare errors).`;
+const calib = () => realScores.length ? `CALIBRATION — their REAL IELTS results: ${realScores.slice(-3).map(x => `${x.kind} ${x.band} (${x.date})`).join(', ')}. Your recent mock estimates: Speaking ${[...tests].reverse().find(t => t.kind === 'Speaking')?.overall || 'none'}, Writing ${[...tests].reverse().find(t => t.kind === 'Writing')?.overall || 'none'}. If you have been above their real result, mark stricter.` : '';
 function stageOf(b) { b = toBand(b); return isNaN(b) || b < 5.5 ? '5' : b < 6.5 ? '6' : b < 7.5 ? '7' : '8'; }
 function nextUnit() {
   const start = UNITS.findIndex(u => u.st === stageOf(profile.band));
@@ -617,11 +638,14 @@ CASUAL CHAT (default, and after [TALK]):
 - At most ONE line at the end starting with "✏️ ": either fix a mistake that matters, or, if their sentence was correct but sounded textbook, show how a native would say it ("✏️ Tự nhiên hơn: …"), with a few Vietnamese words of why. Skip it when nothing is worth it. Never correct their Vietnamese — ✏️ is only for their English.
 
 ACTIVITIES (explanations may be in Vietnamese; every English sentence meant to be read aloud goes on its own line starting with "🗣 "; ONE step per reply and wait for the learner; when finished add <done/> and invite them back to chatting):
-[SPEAKING] Full mock Speaking test, behave like a real examiner: Part 1 — 4 questions on 1–2 familiar topics, one at a time; Part 2 — give a cue card (topic + 4 bullet prompts), tell them in Vietnamese they have 1 minute to prepare then should talk for 1–2 minutes in ONE message (they may record several times with 🎤 before sending); one short follow-up question; Part 3 — 4 deeper discussion questions linked to Part 2, one at a time. No feedback during the test. At the end: band for each criterion — Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation (say Pronunciation is only estimated from the speech-to-text transcript) — and the overall band (IELTS rounding), 3 concrete things to fix, and a native-speaker / band-8 version of two of their answers on 🗣 lines. The SAME reply that gives the scores must end with exactly <band>{"kind":"Speaking","overall":N,"FC":N,"LR":N,"GRA":N,"P":N}</band>, a profile tag, <done/>.
-[WRITING] Ask them to paste the task prompt and their essay (Task 1 or Task 2) if they have not. Then mark like an examiner: band for Task Achievement/Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy, overall; list the main errors with corrections; rewrite their introduction and one body paragraph at band 8 (plain lines, no 🗣 — writing is not read aloud). The SAME reply that gives the scores must end with exactly <band>{"kind":"Writing","overall":N,"TA":N,"CC":N,"LR":N,"GRA":N}</band>, a profile tag, <done/>.
+[SPEAKING] Full mock Speaking test, behave like a real examiner: Part 1 — 4 questions on 1–2 familiar topics, one at a time; Part 2 — give a cue card (topic + 4 bullet prompts), tell them in Vietnamese they have 1 minute to prepare then should talk for 1–2 minutes in ONE message (they may record several times with 🎤 before sending); one short follow-up question; Part 3 — 4 deeper discussion questions linked to Part 2, one at a time. No feedback during the test. At the end: an honest half-band RANGE (e.g. 6.0–6.5) for each criterion and the overall, with one quoted sentence of theirs as evidence for each criterion, and a reminder in Vietnamese that this is an estimate — criterion by criterion: Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation (say Pronunciation is only estimated from the speech-to-text transcript) — and the overall band (IELTS rounding), 3 concrete things to fix, and a native-speaker / band-8 version of two of their answers on 🗣 lines. The SAME reply that gives the scores must end with exactly <band>{"kind":"Speaking","overall":N,"range":[low,high],"FC":N,"LR":N,"GRA":N,"P":N}</band> (overall = middle of the range), a profile tag, <done/>.
+[WRITING] Ask them to paste the task prompt and their essay (Task 1 or Task 2) if they have not. Then mark like an examiner: an honest half-band RANGE with one quoted sentence as evidence for each of Task Achievement/Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy, overall; list the main errors with corrections; rewrite their introduction and one body paragraph at band 8 (plain lines, no 🗣 — writing is not read aloud). The SAME reply that gives the scores must end with exactly <band>{"kind":"Writing","overall":N,"range":[low,high],"TA":N,"CC":N,"LR":N,"GRA":N}</band> (overall = middle of the range), a profile tag, <done/>.
+${IELTS_GUIDE}
+${calib()}
 [LESSON <unit id>] ${lessonText(u)}
 [REVIEW] 5 short exercises one at a time on their weak points, each with a native upgrade; then say which improved, profile tag, <done/>.
 [WORDS] <list of word = meaning pairs> Spaced-repetition review of exactly those words: quiz them ONE at a time in a mix of ways (give the Vietnamese meaning and ask for the English word, a gap sentence, or ask them to use it in a sentence), correct at once, keep going until all are covered; at the end give the result in 1 line, then exactly <review>{"ok":["word",…],"miss":["word",…]}</review> and <done/>.
+[FIXES] <list of "their mistake => natural version" pairs> Spaced review of the learner's OWN past mistakes from earlier calls: for each pair, give a short real-life situation in Vietnamese and ask them to say it naturally in English; accept close natural variants; correct at once; at the end give the result in 1 line, then exactly <review>{"ok":["natural version",…],"miss":["natural version",…]}</review> (copy the natural versions exactly as given) and <done/>.
 [TALK] Stop any activity; go back to casual chat naturally.
 
 ${roastBase ? '' : 'MEMORY: when they share something worth remembering (a story, a plan, a topic you covered, an open thread), silently append at the very end <memory>["short Vietnamese note", ...]</memory> (1–3 notes, no full names, addresses, phone or ID numbers).' + String.fromCharCode(10)}${examBlock(false)}
@@ -644,7 +668,8 @@ function saveExam(kind, b) {
   const crit = {}; for (const c of CRIT[kind]) crit[c] = fmt(toBand(b[c]));
   const overall = toBand(b.overall);
   if (isNaN(overall)) return;
-  tests.push({ date: today(), kind, overall: fmt(overall), crit }); store('ie_tests', tests);
+  const rg = Array.isArray(b.range) ? b.range.map(toBand).filter(x => !isNaN(x)) : [];
+  tests.push({ date: today(), kind, overall: fmt(overall), crit, range: rg.length === 2 ? rg.map(fmt) : [] }); store('ie_tests', tests);
   if (kind === 'Speaking') { profile.band = fmt(overall); store('ie_profile', profile); showLevel(); }
 }
 
@@ -671,6 +696,7 @@ function takeTags(text) {
   const wm = text.match(/<words>([\s\S]*?)<\/words>/), rm = text.match(/<review>([\s\S]*?)<\/review>/);
   if (wm && mode === 'LESSON') try { addVocab(JSON.parse(wm[1])); } catch {}
   if (rm && mode === 'WORDS') try { reviewVocab(JSON.parse(rm[1])); } catch {}
+  if (rm && mode === 'FIXES') try { reviewFixes(JSON.parse(rm[1])); } catch {}
   const mm = text.match(/<memory>([\s\S]*?)<\/memory>/);
   if (mm) try { addNotes(JSON.parse(mm[1])); } catch {}
   if (finished) setMode('');
@@ -702,7 +728,7 @@ function chatTimer(t) { // đồng hồ bài viết trong chat chữ (vd IELTS G
 function setMode(m) {
   if (!m) clearInterval(chatTid);
   mode = m; store('ie_mode', mode);
-  const label = { SPEAKING: '🎤 Đang thi thử Speaking', WRITING: '✍️ Đang chấm Writing', REVIEW: '🔁 Đang ôn điểm yếu', WORDS: '🔁 Đang ôn từ vựng đến hạn', LESSON: `📚 ${unit}: ${unitById(unit)?.t || ''}` }[mode];
+  const label = { SPEAKING: '🎤 Đang thi thử Speaking', WRITING: '✍️ Đang chấm Writing', REVIEW: '🔁 Đang ôn điểm yếu', WORDS: '🔁 Đang ôn từ vựng đến hạn', FIXES: '🩹 Đang ôn lỗi của chính bạn', LESSON: `📚 ${unit}: ${unitById(unit)?.t || ''}` }[mode];
   $('#modebar').hidden = !label;
   if (label) $('#modeText').textContent = label;
   $('#text').classList.toggle('long', mode === 'SPEAKING' || mode === 'WRITING');
@@ -710,6 +736,7 @@ function setMode(m) {
 
 function cmdLabel(text) {
   if (/^\[WORDS\]/.test(text)) return '— Ôn từ vựng đến hạn —';
+  if (/^\[FIXES\]/.test(text)) return '— Ôn lỗi từ buổi gọi —';
   const m = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON)(?: ((?:B[5-8]|[GVR][1-4])-\d\d))?\]$/);
   if (!m) return null;
   if (m[1] === 'LESSON') return `— Bài ${m[2]}: ${unitById(m[2])?.t || ''} —`;
@@ -732,6 +759,10 @@ function render(m) {
       const b = el('button', 'play', '🔊'); b.setAttribute('aria-label', 'Nghe lại');
       b.onclick = () => speak(say);
       div.append(b);
+      if (window.MediaRecorder && navigator.mediaDevices?.getUserMedia && m.text.split('\n').some(l => l.trim().startsWith('🗣'))) {
+        const rb = el('button', 'play', '🎙'); rb.setAttribute('aria-label', 'Đọc theo và chấm phát âm');
+        rb.onclick = () => pronRecord(rb, say, LANGS[callMode]?.name || (callMode === 'zh' ? 'Mandarin Chinese' : 'English')); div.append(' ', rb);
+      }
     }
   }
   $('#chat').append(div);
@@ -758,6 +789,7 @@ function todayCard() {
   const items = [
     [`⚡ Phản xạ 5 phút: ${r.t}`, doneToday(REFLEX) || reflexLog.some(x => x.date === today()), () => startDrill(r.id)],
     [due ? `🔁 Ôn ${due} từ đến hạn` : '🔁 Không có từ đến hạn', !due, startWords],
+    ...(dueFixes().length ? [[`🩹 Ôn ${dueFixes().length} lỗi từ buổi gọi`, false, startFixes]] : []),
     [`📖 Từ mới: ${v.t}`, doneToday(VOCAB), () => startLesson(v.id)],
     [`📐 Ngữ pháp: ${g.t}`, doneToday(GRAMMAR), () => startLesson(g.id)],
     ['📞 Gọi Sam nói chuyện tự do 10 phút', false, () => { $('#call').hidden = false; callStart(); }],
@@ -848,6 +880,16 @@ function renderIelts(road) {
     const b = el('button', cls || '', label); b.onclick = fn; acts.append(b);
   }
   sum.append(acts);
+  // Điểm thi thật: để Sam so và tự hiệu chỉnh (AI hay chấm lệch 0,5–2 band)
+  const rw = el('div', 'real'), rk = el('select'), rv = el('input'), rb = el('button', '', 'Lưu');
+  ['Speaking', 'Writing', 'Overall'].forEach(k => { const o = el('option', '', k); o.value = k; rk.append(o); });
+  rk.setAttribute('aria-label', 'Kỹ năng'); Object.assign(rv, { type: 'number', min: 1, max: 9, step: 0.5, placeholder: 'Điểm thi thật' }); rv.setAttribute('aria-label', 'Điểm thi IELTS thật');
+  rb.onclick = () => { const v = toBand(rv.value); if (isNaN(v)) return; realScores.push({ date: today(), kind: rk.value, band: fmt(v) }); realScores = realScores.slice(-20); store('gs_real', realScores); renderRoad(); };
+  rw.append(rk, rv, rb); sum.append(el('p', 'hint', '📝 Đã thi IELTS thật? Nhập điểm để Sam so và chấm sát hơn:'), rw);
+  for (const x of realScores.slice(-3).reverse()) {
+    const mock = [...tests].reverse().find(t => t.kind === x.kind)?.overall, d = mock ? +mock - +x.band : NaN;
+    sum.append(el('p', 'hist', `Thi thật ${x.date}: ${x.kind} ${x.band}${isNaN(d) ? '' : ` · Sam chấm gần nhất ${mock} → ${d === 0 ? 'khớp' : d > 0 ? `Sam chấm cao hơn ${fmt(d)}` : `Sam chấm thấp hơn ${fmt(-d)}`}`}`));
+  }
   sum.append(el('p', 'hint', `Bài đã học: ${done.length}/${UNITS.length} · điểm TB ${avg}/10. Mỗi ngày: nói chuyện với Sam 10–15 phút + học 📚 một phần bài. Mỗi 2 tuần 🎤 thi thử một lần để xem band lên chưa. Phát âm chỉ được ước lượng qua chữ nhận dạng giọng nói.`));
   road.append(sum);
 
@@ -896,6 +938,94 @@ function speak(t) {
 }
 
 // Gọi AI. Tách riêng để có thể thay nguồn AI khác.
+// Một lần gọi Gemini REST trả JSON (tóm tắt buổi gọi, chấm phát âm). Model ghim 404 → bí danh; 429 → báo hết lượt.
+async function geminiJSON(parts) {
+  let mdl = model;
+  for (let i = 0; i < 3; i++) {
+    let r, data;
+    try {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json' } }) });
+      data = await r.json();
+    } catch { r = { status: 0, ok: false }; data = {}; }
+    if (r.status === 404 && mdl === DEFAULT_MODEL) { mdl = MODEL_ALIAS; i--; continue; }
+    if (r.status === 429 || /quota|exhaust/i.test(data.error?.message || '')) throw new Error(QUOTA_MSG);
+    if (!r.ok) { if ([0, 500, 503].includes(r.status) && i < 2) { await new Promise(z => setTimeout(z, 2000)); continue; } throw new Error(data.error?.message || 'Lỗi ' + r.status); }
+    const raw = (data.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('').trim();
+    return JSON.parse(raw.replace(/^```(?:json)?\s*/, '').replace(/```$/, ''));
+  }
+  throw new Error('Google đang bận, thử lại sau.');
+}
+// Tóm tắt sau buổi gọi (Speak/Langua/Loora đều có): lỗi thật → sổ lỗi ôn cách quãng, từ mới → sổ từ, tóm tắt → trí nhớ.
+function summarizeCall(L) {
+  if (!L || !key || !(callMode === 'learn' || callMode === 'roast')) return;
+  const turns = hist.slice(L.h0 ?? hist.length);
+  if (turns.filter(t => t.role === 'user').length < 3) return;
+  const box = el('div', 'msg ai', '📝 Đang tóm tắt buổi gọi…'); $('#chat').append(box); $('#chat').scrollTop = 1e9;
+  const cm = callMode; // chốt chế độ lúc kết thúc gọi
+  const tr = turns.map(t => (t.role === 'user' ? 'Learner: ' : 'Sam: ') + t.text).join(String.fromCharCode(10)).slice(-12000);
+  return geminiJSON([{ text: `You review a spoken English practice call between a Vietnamese learner and their tutor Sam. The transcript comes from speech recognition, so ignore obvious transcription glitches and punctuation. Return JSON only: {"summary":"1-2 Vietnamese sentences: what they talked about and how the learner did","fixes":[{"wrong":"exact learner phrase","better":"natural native version","why":"a few Vietnamese words"}],"words":["useful English word or phrase from the call = nghĩa tiếng Việt"],"next":"one Vietnamese sentence: what to practise next time"}. fixes: 3-5 REAL mistakes or unnatural phrasings by the LEARNER (never Sam's lines), empty if none; words: at most 6.
+TRANSCRIPT:
+${tr}` }]).then(j => {
+    box.textContent = '';
+    box.append(el('span', 'say', '📝 Tóm tắt buổi gọi\n'), el('span', '', String(j.summary || '') + '\n'));
+    for (const f of (j.fixes || []).slice(0, 5)) box.append(el('span', 'fix', `✏️ ${f.wrong} → ${f.better}${f.why ? ` (${f.why})` : ''}`));
+    if (j.words?.length) box.append(el('span', '', `\n📖 Từ mới: ${j.words.slice(0, 6).join(' · ')}\n`));
+    if (j.next) box.append(el('span', 'fix tip', `💡 Lần sau: ${j.next}`));
+    addFixes(j.fixes); addVocab((j.words || []).slice(0, 6));
+    if (cm === 'learn' && j.summary) { lmem = [...new Set([...lmem, String(j.summary).slice(0, 160)])].slice(-30); store('gs_lmem', lmem); }
+    if (cm === 'roast') { phrMem = [...new Set([...phrMem, ...(j.fixes || []).map(f => `${f.wrong} → ${f.better}`.slice(0, 160))])].slice(-30); store('gs_phr', phrMem); } // Cục súc: nhớ câu sai, không nhớ văn tóm tắt
+    $('#chat').scrollTop = 1e9;
+  }).catch(e => { box.className = 'cmd'; box.textContent = '⚠️ Không tóm tắt được buổi gọi: ' + e.message; });
+}
+// Đọc theo câu 🗣 rồi để Gemini nghe đoạn ghi âm (chữ chép lại che mất lỗi nuốt âm cuối — lỗi lớn của người Việt).
+let recBusy = null;
+async function pronRecord(btn, target, lang) {
+  if (recBusy) return recBusy.stop(); // bấm lần 2 = dừng ghi (hoặc bỏ qua khi đang xin quyền micro)
+  if (!key) { $('#set').showModal(); return; }
+  const hold = recBusy = { stop() {} }; // giữ chỗ ngay, trước khi chờ quyền micro, để bấm đôi không mở 2 micro
+  let stream, mr; const chunks = [];
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    window.speechSynthesis?.cancel();
+    mr = new MediaRecorder(stream);
+  } catch { stream?.getTracks().forEach(t => t.stop()); if (recBusy === hold) recBusy = null; btn.textContent = '⚠️'; return; }
+  recBusy = mr;
+  const cap = setTimeout(() => mr.state === 'recording' && mr.stop(), 15000);
+  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = () => { clearTimeout(cap); stream.getTracks().forEach(t => t.stop()); if (recBusy === mr) recBusy = null; btn.classList.remove('on'); btn.textContent = '🎙';
+    const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' }); if (blob.size > 1500) pronCheck(blob, target, lang); };
+  try { mr.start(); } catch { mr.onstop(); return; }
+  btn.classList.add('on'); btn.textContent = '⏹';
+}
+// Đổi ghi âm sang WAV 16 kHz mono: Gemini nhận webm/ogg/wav… (tài liệu 16/11/2026) nhưng iOS ghi audio/mp4 không có trong danh sách → WAV chạy mọi máy.
+async function toWav16k(blob) {
+  const AC = window.AudioContext || window.webkitAudioContext, ac = new AC();
+  try {
+    const buf = await ac.decodeAudioData(await blob.arrayBuffer()), n = Math.max(1, Math.ceil(buf.duration * 16000));
+    const oc = new OfflineAudioContext(1, n, 16000), src = oc.createBufferSource(); src.buffer = buf; src.connect(oc.destination); src.start();
+    const pcm = (await oc.startRendering()).getChannelData(0), dv = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+    const tag = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+    tag(0, 'RIFF'); dv.setUint32(4, 36 + pcm.length * 2, true); tag(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, 16000, true); dv.setUint32(28, 32000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); tag(36, 'data'); dv.setUint32(40, pcm.length * 2, true);
+    for (let i = 0; i < pcm.length; i++) dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 0x7fff, true);
+    return new Blob([dv], { type: 'audio/wav' });
+  } finally { ac.close?.(); }
+}
+const blobB64 = b => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(b); });
+async function pronCheck(blob, target, lang) {
+  const box = el('div', 'msg ai', '🎙 Đang nghe bạn đọc…'); $('#chat').append(box); $('#chat').scrollTop = 1e9;
+  try {
+    const au = await toWav16k(blob).catch(() => blob); // không giải mã được thì gửi nguyên bản
+    const j = await geminiJSON([{ inline_data: { mime_type: (au.type || 'audio/webm').split(';')[0], data: await blobB64(au) } }, { text: `The audio is a Vietnamese learner reading this ${lang} sentence aloud: "${target}". First transcribe exactly what you hear, then compare it with the sentence and judge PRONUNCIATION only${lang === 'English' ? ', paying special attention to problems typical of Vietnamese speakers: dropped or unreleased final consonants (/s z t d k/, -ed and -s endings), consonant clusters, /θ ð ʃ ʒ/, word stress and sentence stress' : ''}. Return JSON only: {"heard":"your transcription","clarity":1-5,"words":[{"word":"...","issue":"short Vietnamese explanation of what went wrong and how to fix it"}],"tip":"one short Vietnamese tip"}. At most 6 words, only real problems. Be honest; if the audio is unclear, say so in tip.` }]);
+    const s = Math.max(1, Math.min(5, Math.round(+j.clarity || 1)));
+    box.textContent = '';
+    box.append(el('span', '', `🎙 Nghe được: "${String(j.heard || '').slice(0, 300)}"\n`), el('span', 'say', `Độ rõ: ${'★'.repeat(s)}${'☆'.repeat(5 - s)} · AI nhận xét, ước lượng\n`));
+    for (const w of (j.words || []).slice(0, 6)) box.append(el('span', 'fix', `✏️ ${w.word}: ${w.issue}`));
+    if (j.tip) box.append(el('span', 'fix tip', `💡 ${j.tip}`));
+    $('#chat').scrollTop = 1e9;
+  } catch (e) { box.className = 'cmd'; box.textContent = '⚠️ Không chấm được phát âm: ' + e.message; }
+}
 async function askAI(onWait) {
   const body = JSON.stringify({
     system_instruction: { parts: [{ text: systemPrompt() }] },
@@ -929,7 +1059,7 @@ async function send(text) {
   text = text.trim();
   if (!text || busy) return;
   if (!key) { $('#set').showModal(); return; }
-  const cmd = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON|WORDS)/);
+  const cmd = text.match(/^\[(SPEAKING|WRITING|TALK|REVIEW|LESSON|WORDS|FIXES)/);
   if (cmd?.[1] === 'SPEAKING') civicsSet = null;
   if (cmd) { setMode(cmd[1] === 'TALK' ? '' : cmd[1]); if (callMode === 'chat' || isL2(callMode)) setCallMode('learn'); }
   const wasWriting = mode === 'WRITING';
@@ -952,6 +1082,7 @@ async function send(text) {
 }
 
 function start(cmd) { show('vChat'); send(cmd); }
+function startFixes() { const d = dueFixes(); if (d.length) start(`[FIXES] ${d.map(f => f.w + ' => ' + f.b).join('; ')}`); }
 function startWords() { const d = dueWords(); if (d.length) start(`[WORDS] ${d.map(v => v.w + ' = ' + v.m).join('; ')}`); }
 function startLesson(id) { unit = id; store('ie_unit', unit); start(`[LESSON ${id}]`); }
 
@@ -999,7 +1130,7 @@ $('#save').onclick = () => {
 $('#reset').onclick = () => {
   if (!confirm('Xoá toàn bộ trò chuyện, band, điểm, lịch sử thi thử, sổ từ, nhật ký phản xạ và trí nhớ của Sam? (Giữ khoá API và phần giới thiệu bản thân.)')) return;
   profile = { band: '', weak: [], note: '' }; hist = []; scores = {}; tests = []; unit = '';
-  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; for (const k in l2Mem) delete l2Mem[k]; exam = 'ielts'; civicsSet = null; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
+  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; for (const k in l2Mem) delete l2Mem[k]; exam = 'ielts'; civicsSet = null; fixes = []; realScores = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
   try { for (const k of Object.keys(localStorage)) if (/^(ie_|gs_(?!key|model|about))/.test(k)) localStorage.removeItem(k); } catch {}
   store('gs_mode', callMode); // giữ chế độ đang chọn
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
@@ -1018,7 +1149,7 @@ const LIVE_TOOLS = [{ functionDeclarations: [
   { name: 'save_memory', description: 'Save short notes about what the friend shared (people, feelings, plans, open threads) so you can remember next time',
     parameters: { type: 'OBJECT', properties: { notes: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['notes'] } },
   { name: 'save_speaking_result', description: 'Save the final scores of a finished mock IELTS Speaking test',
-    parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'FC', 'LR', 'GRA', 'P'] } },
+    parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, low: { type: 'NUMBER' }, high: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'FC', 'LR', 'GRA', 'P'] } },
   { name: 'save_drill', description: 'Save the result of a finished [REFLEX] drill',
     parameters: { type: 'OBJECT', properties: { unit: { type: 'STRING' }, correct: { type: 'NUMBER' }, total: { type: 'NUMBER' } }, required: ['correct', 'total'] } },
   { name: 'show_card', description: 'Show a text card on the learner screen (task instructions, a text to read aloud, a cue card)',
@@ -1080,7 +1211,7 @@ ${about}
 You hear their real voice, so also notice pronunciation — final consonants, -s/-ed endings, word stress, /θ ð/ — which Vietnamese speakers often struggle with.
 Corrections are light, like a friend: at most one per turn and only when it matters or keeps repeating — say how a native would put it, then carry on.
 Now and then steer toward common IELTS Speaking topics (${TOPICS}).
-When they ask for a mock Speaking test (or say "[SPEAKING]"), run it like a real examiner: Part 1 (4 questions), Part 2 (read the cue card aloud, give them one minute to prepare, then let them talk for 1–2 minutes without interrupting), Part 3 (4 questions). No feedback during the test. Then tell them their band for Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation and overall, plus 3 things to fix, and call save_speaking_result.
+When they ask for a mock Speaking test (or say "[SPEAKING]"), run it like a real examiner: Part 1 (4 questions), Part 2 (read the cue card aloud, give them one minute to prepare, then let them talk for 1–2 minutes without interrupting), Part 3 (4 questions). No feedback during the test. Then tell them their band for Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation and overall, plus 3 things to fix, and call save_speaking_result (with low/high = your overall range). Give each criterion as an honest half-band range with one quoted sentence as evidence and say it is an estimate. ${IELTS_GUIDE} ${calib()}
 When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train instant speaking without translating in their head: fire ONE short prompt at a time and keep the pace FAST; they should answer with one natural sentence within about 3 seconds; never explain at length. If they hesitate, stall or answer in Vietnamese, give the natural answer in one breath, make them say it once, then fire the next prompt. Mix these as the unit's focus suggests: quick-fire personal questions; instant translation (you may say a short Vietnamese line, they say it in English); situation reactions ("Your boss just moved the deadline to today — reply!"); shadowing (they repeat your native line with the same rhythm); chains (you twist a follow-up on their answer). Do 12–15 prompts, then a short verdict: how many they nailed out of the total, which prompt type was slowest, 3 phrases to keep — and call save_drill with unit, correct and total. The app measures their reaction time itself.
 ${roastBase ? '' : 'Every few minutes and near the end, call save_memory with 1–5 short Vietnamese notes (stories they told, topics you covered, open threads) so you can pick them up next time. '}After a few minutes, and whenever your picture of them changes, call save_profile (band in 0.5 steps; weak: up to 6 short items in Vietnamese with full diacritics; note: one short Vietnamese sentence). Never mention these functions out loud.
 ${!roastBase && lmem.length ? `What you remember from earlier sessions (bring it up naturally, don't recite it):
@@ -1120,7 +1251,7 @@ async function callStart(firstText, drill = null) {
   if (live) return;
   if (!key) { $('#set').showModal(); return; }
   civicsSet = null; // cuộc gọi mới = bộ câu civics mới (nối lại phiên thì giữ)
-  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0 };
+  const L = live = { inT: '', outT: '', sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0, h0: hist.length };
   const gone = () => live !== L; // bấm Kết thúc trong lúc đang kết nối: mọi thứ mở xong sau đó phải nhả ngay (micro, WebSocket, khoá màn hình)
   callUI('connecting');
   if (window.Avatar) await Avatar.start(() => live === L && callUI('listening'));
@@ -1206,7 +1337,7 @@ function onLive(L, m, firstText) {
     for (const f of fs) try {
       if (f.name === 'save_profile' && (callMode === 'learn' || callMode === 'roast')) applyProfile(f.args || {}, false);
       if (f.name === 'save_memory') addNotes(f.args?.notes);
-      if (f.name === 'save_speaking_result') exam === 'ielts' ? saveExam('Speaking', f.args || {}) : saveExam2(examName(), 'Speaking', f.args?.overall, []);
+      if (f.name === 'save_speaking_result') exam === 'ielts' ? saveExam('Speaking', { ...f.args, range: [f.args?.low, f.args?.high] }) : saveExam2(examName(), 'Speaking', f.args?.overall, [f.args?.low, f.args?.high]);
       if (f.name === 'save_drill' && L.drill) saveDrill(L, f.args || {});
       if (f.name === 'show_card') showCard(L, f.args || {});
       if (f.name === 'start_timer') startTimer(L, f.args || {});
@@ -1315,6 +1446,7 @@ function callEnd(L, msg) {
   window.Avatar?.stop();
   flush(L);
   callUI('idle', msg);
+  summarizeCall(L);
 }
 
 const l2Label = m => m === 'zh' ? '🀄 HSK3' : LANGS[m]?.label || m;

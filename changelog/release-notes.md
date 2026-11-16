@@ -2,6 +2,12 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-16 · v61 — nâng cấp đợt 2 theo nghiên cứu đối thủ
+
+- Tóm tắt sau buổi gọi: lỗi chính + câu nói tự nhiên hơn + từ mới + gợi ý lần sau; lỗi vào sổ lỗi ôn cách quãng (🩹 trong thẻ Hôm nay), từ mới vào sổ từ.
+- Điểm IELTS thật thà: band dạng khoảng nửa band + câu trích làm bằng chứng, bảng mô tả band (diễn đạt lại), luật bài yếu không được 7+; nhập điểm thi thật để Sam tự hiệu chỉnh.
+- Nút 🎙 đọc theo: ghi âm câu 🗣, Gemini nghe và chỉ ra từ đọc sai (âm cuối, -s/-ed, trọng âm), độ rõ 1–5 — ghi rõ là ước lượng.
+
 ## 2026-11-14 · v60 — chứng chỉ cho khách hệ sinh thái PH
 
 - Tab "🎯 Kỳ thi": chọn IELTS Academic / IELTS General / TOEFL 2026 / PTE / Duolingo English Test / Phỏng vấn quốc tịch Mỹ; thi thử chạy đúng dạng bài kỳ thi đó, điểm dạng khoảng ước lượng.

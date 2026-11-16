@@ -25,6 +25,8 @@
 | `dh` | Đã hiện gợi ý "kéo để xoay" |
 | `gs_ptt` | Bật "Giữ nút để nói" trong cuộc gọi |
 | `gs_lmem` | Trí nhớ chế độ Học (≤ 30 ghi chú) |
+| `gs_fix` | Sổ lỗi từ buổi gọi `{w, b, why, box, due}` (≤ 200), ôn cách quãng như sổ từ |
+| `gs_real` | Điểm thi IELTS thật người học tự nhập `{date, kind, band}` |
 | `gs_exam`, `gs_target` | Kỳ thi đang luyện; đích đến đang xem trong bảng điểm |
 | `gs_mem_de`, `gs_mem_ko`, `gs_mem_ja`, `gs_mem_tw` | Trí nhớ từng ngôn ngữ thứ hai (≤ 30 ghi chú) |
 
@@ -35,6 +37,8 @@
 | `data/targets.js` | Điểm cần theo đích đến (định cư, du học, đi làm), `verified:false` khi nguồn bên thứ ba | IRCC, Home Affairs (qua bản sao), GOV.UK, make-it-in-germany… |
 | `data/langs.js` | Lời dặn + mã giọng + chữ viết được phép cho Đức/Hàn/Nhật/Đài | goethe.de, topik.go.kr, jlpt.jp, jpf, tocfl |
 | `data/us-civics.js` | 128 câu civics 2025, đáp án chấp nhận, danh sách từ đọc/viết | uscis.gov (tài liệu công) |
+
+Gọi REST trả JSON (`geminiJSON`, `responseMimeType: application/json`): tóm tắt sau buổi gọi (`summarizeCall`), chấm phát âm từ ghi âm (`pronCheck`, gửi `inline_data` âm thanh webm). Model ghim → 404 lùi bí danh như chat.
 
 Công cụ gọi thoại thêm: `show_card(title, text)`, `start_timer(label, prep_seconds, speak_seconds, kind, target_text)`, `save_exam_result(skill, overall, low, high, feedback)`.
 Mỗi lần đọc/ghi bọc `try/catch` (chế độ riêng tư có thể chặn).

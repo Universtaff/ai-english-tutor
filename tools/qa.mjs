@@ -305,5 +305,28 @@ const l2 = await ev(`(()=>{const r=[],c0=callMode,b=document.querySelector('#seg
   setCallMode(c0);return r})()`);
 check(okList(l2), 'ngôn ngữ thứ hai: xoay Trung→Đức→Hàn→Nhật→Đài · lời dặn đúng · bộ lọc chữ đúng ngôn ngữ', Array.isArray(l2) ? l2.join('; ') : JSON.stringify(l2));
 
+// Đợt 2 (v61): tóm tắt sau buổi gọi + sổ lỗi, điểm IELTS thật thà + điểm thi thật, chấm phát âm từ ghi âm — giả lập Gemini.
+const rc = await ev(`(async()=>{const r=[],F=window.fetch,reqs=[],cm=callMode,h0=hist.length,f0=JSON.stringify(fixes),v0=JSON.stringify(vocab),l0=JSON.stringify(lmem);
+  const reply=o=>({status:200,ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]})});
+  window.fetch=async(u,o)=>{const b=JSON.parse(o.body);reqs.push(b);return reply(b.contents[0].parts.some(x=>x.inline_data)?{heard:'I walk to the store',clarity:3,words:[{word:'walked',issue:'thiếu âm /t/ cuối'}],tip:'bật âm cuối'}:{summary:'QA tóm tắt: nói về công việc',fixes:[{wrong:'I very like it',better:'I really like it',why:'very không đứng trước động từ'}],words:['deadline = hạn chót'],next:'luyện thì quá khứ'})};
+  callMode='learn';hist.push({role:'user',text:'I very like it'},{role:'model',text:'Nice'},{role:'user',text:'I go to work yesterday'},{role:'model',text:'Oh'},{role:'user',text:'deadline is tomorrow'});
+  await summarizeCall({h0});const card=[...document.querySelectorAll('#chat .msg.ai')].at(-1)?.textContent||'';
+  if(!/Tóm tắt buổi gọi/.test(card)||!/I really like it/.test(card))r.push('không hiện thẻ tóm tắt: '+card.slice(0,80));
+  if(!fixes.some(f=>f.b==='I really like it'))r.push('lỗi không vào sổ lỗi');if(!vocab.some(v=>v.w==='deadline'))r.push('từ mới không vào sổ từ');if(!lmem.some(x=>/QA tóm tắt/.test(x)))r.push('tóm tắt không vào trí nhớ');
+  const pm0=JSON.stringify(phrMem);callMode='roast';hist.push({role:'user',text:'a'},{role:'user',text:'b'},{role:'user',text:'c'});await summarizeCall({h0:hist.length-3});if(phrMem.some(x=>/QA tóm tắt/.test(x))||!phrMem.some(x=>/I really like it/.test(x)))r.push('Cục súc: sổ câu sai nhận nhầm văn tóm tắt');phrMem=JSON.parse(pm0);store('gs_phr',phrMem);callMode='learn';
+  if(!/Learner: I very like it/.test(reqs[0]?.contents[0].parts[0].text||''))r.push('không gửi lời thoại buổi gọi');
+  fixes.at(-1).due='2000-01-01';mode='FIXES';takeTags('xong <review>{"ok":["I really like it."],"miss":[]}</review> <done/>');if(fixes.at(-1).box!==1)r.push('ôn lỗi không dời lịch');
+  roadTab='I';fixes.at(-1).due='2000-01-01';renderRoad();if(!/Ôn 1 lỗi từ buổi gọi/.test(document.querySelector('#road .today')?.textContent||''))r.push('thẻ Hôm nay thiếu dòng ôn lỗi');
+  const p=systemPrompt();if(!/BAND GUIDE/.test(p)||!/RANGE/.test(p)||!/\\[FIXES\\]/.test(p))r.push('lời dặn IELTS thiếu bảng mô tả band / khoảng / [FIXES]');
+  const t0=tests.length,rs0=JSON.stringify(realScores);mode='SPEAKING';takeTags('<band>{"kind":"Speaking","overall":6.5,"range":[6,7],"FC":6.5,"LR":6.5,"GRA":6,"P":6.5}</band> <done/>');if(tests.at(-1)?.range?.join()!=='6.0,7.0')r.push('thẻ band không lưu khoảng');
+  realScores=[{date:'2026-11-16',kind:'Speaking',band:'6.0'}];if(!/REAL IELTS results: Speaking 6.0/.test(systemPrompt()))r.push('điểm thi thật không vào lời dặn hiệu chỉnh');
+  const sr=8000,ns=sr,wv=new DataView(new ArrayBuffer(44+ns*2)),tg=(o,t)=>{for(let i=0;i<t.length;i++)wv.setUint8(o+i,t.charCodeAt(i))};tg(0,'RIFF');wv.setUint32(4,36+ns*2,true);tg(8,'WAVEfmt ');wv.setUint32(16,16,true);wv.setUint16(20,1,true);wv.setUint16(22,1,true);wv.setUint32(24,sr,true);wv.setUint32(28,sr*2,true);wv.setUint16(32,2,true);wv.setUint16(34,16,true);tg(36,'data');wv.setUint32(40,ns*2,true);for(let i=0;i<ns;i++)wv.setInt16(44+i*2,Math.sin(i/5)*8000,true);
+  await pronCheck(new Blob([wv],{type:'audio/x-test'}),'I walked to the store','English');const pc=[...document.querySelectorAll('#chat .msg.ai')].at(-1)?.textContent||'';
+  const pr=reqs.at(-1)?.contents[0].parts||[];if(pr[0]?.inline_data?.mime_type!=='audio/wav'||(pr[0].inline_data.data||'').length<40000)r.push('âm thanh không được đổi sang WAV 16 kHz: '+pr[0]?.inline_data?.mime_type+' '+(pr[0]?.inline_data?.data||'').length);if(!/I walked to the store/.test(pr[1]?.text||''))r.push('không gửi câu gốc');
+  if(!/★★★☆☆/.test(pc)||!/walked/.test(pc)||!/ước lượng/.test(pc))r.push('thẻ chấm phát âm sai: '+pc.slice(0,80));
+  window.fetch=F;callMode=cm;hist.splice(h0);store('ie_hist',hist.slice(-40));fixes=JSON.parse(f0);store('gs_fix',fixes);vocab=JSON.parse(v0);store('gs_vocab',vocab);lmem=JSON.parse(l0);store('gs_lmem',lmem);tests.splice(t0);store('ie_tests',tests);realScores=JSON.parse(rs0);store('gs_real',realScores);setMode('');
+  return r})()`);
+check(okList(rc), 'đợt 2: tóm tắt sau buổi gọi → sổ lỗi/sổ từ/trí nhớ · [FIXES] · điểm IELTS dạng khoảng + điểm thi thật · chấm phát âm từ ghi âm', Array.isArray(rc) ? rc.join('; ') : JSON.stringify(rc));
+
 const e2 = [...new Set(errs)]; check(!e2.length, 'không lỗi console / exception trong cả phiên', e2.slice(0, 4).join(' | '));
 await finish();
