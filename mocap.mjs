@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 
-const SRC = 'https://cdn.jsdelivr.net/gh/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset@master/dataset/Bandai-Namco-Research-Motiondataset-1/data/dataset-1_';
+const SRC = 'https://cdn.jsdelivr.net/gh/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset@74ead3ba1ae4696404e6086233779f60de8bf9ef/dataset/Bandai-Namco-Research-Motiondataset-1/data/dataset-1_';
 
 // Xương Sam → [khớp gốc, khớp ngọn] trong mocap. Thứ tự cha trước con.
 const MAP = {

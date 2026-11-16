@@ -1,7 +1,7 @@
 # 05 · Đặc tả kiểm thử
 
 ## Tự động: `node tools/qa.mjs` (≈ 2 phút, mã thoát 1 nếu có ❌)
-**QA (mã & kho):** cú pháp mọi `.mjs` + script trong `index.html` · file tham chiếu có thật · dung lượng `bg/` ≤ 22 MB, `sam.glb` ≤ 14 MB · không lộ khoá/email nội bộ · `sw.js` đã tăng phiên bản khi đổi nội dung · commit đã đẩy.
+**QA (mã & kho):** cú pháp mọi `.mjs` + script trong `index.html` · file tham chiếu có thật · dung lượng `bg/` ≤ 22 MB, `sam.glb` ≤ 14 MB · không lộ khoá/email nội bộ · mọi URL CDN đều pin phiên bản/SHA · `sw.js` đã tăng phiên bản khi đổi nội dung (so với commit cha, không dựa riêng worktree) · lưu sẵn vỏ app (không lưu sẵn tệp lớn) · commit đã đẩy.
 **QC (chạy thật Chrome headless):**
 | Mã | Kiểm |
 |---|---|

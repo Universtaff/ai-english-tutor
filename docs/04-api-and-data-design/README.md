@@ -9,7 +9,7 @@
 | jsDelivr | three, TalkingHead, BVH mocap của Bandai Namco | không | Không cử chỉ mocap; cảnh vẫn chạy |
 
 ## Gemini Live
-`setup`: model, `responseModalities: [AUDIO]`, giọng, `systemInstruction = livePrompt()`, bật `inputAudioTranscription` + `outputAudioTranscription`, `sessionResumption` (kèm `handle` khi nối lại), `contextWindowCompression: { slidingWindow: {} }`, `realtimeInputConfig.automaticActivityDetection` = `{ endOfSpeechSensitivity: END_SENSITIVITY_LOW, silenceDurationMs: 1500 }` (hoặc `{ disabled: true }` khi bật Giữ nút để nói). Máy chủ gửi `sessionResumptionUpdate { newHandle, resumable }` → lưu `L.handle`; `goAway` hoặc đóng bất thường (≠ 1000) khi đã có `handle` → `reconnect(L)` mở kết nối mới, không gửi lời chào. Các hàm:
+Không dùng token tạm (ephemeral token): token phải xin từ chính trình duyệt bằng cùng khoá nên không thêm an toàn, lại giới hạn cuộc gọi ~30 phút. `setup`: model, `responseModalities: [AUDIO]`, giọng, `systemInstruction = livePrompt()`, bật `inputAudioTranscription` + `outputAudioTranscription`, `sessionResumption` (kèm `handle` khi nối lại), `contextWindowCompression: { slidingWindow: {} }`, `realtimeInputConfig.automaticActivityDetection` = `{ endOfSpeechSensitivity: END_SENSITIVITY_LOW, silenceDurationMs: 1500 }` (hoặc `{ disabled: true }` khi bật Giữ nút để nói). Máy chủ gửi `sessionResumptionUpdate { newHandle, resumable }` → lưu `L.handle`; `goAway` hoặc đóng bất thường (≠ 1000) khi đã có `handle` → cùng đi qua bộ đếm nối lại, chờ 1,5 s, tối đa 3 lần, không gửi lời chào. Các hàm:
 - `save_profile(band, weak[], note)` — cập nhật hồ sơ người học.
 - `save_speaking_result(...)` — ghi kết quả thi thử Speaking.
 Âm vào: PCM 16 kHz. Âm ra: PCM 24 kHz phát qua Web Audio và cấp cho HeadAudio (viseme).
@@ -25,6 +25,8 @@
 | `dh` | Đã hiện gợi ý "kéo để xoay" |
 | `gs_ptt` | Bật "Giữ nút để nói" trong cuộc gọi |
 | `gs_lmem` | Trí nhớ chế độ Học (≤ 30 ghi chú) |
+| `gs_mem`, `gs_phr`, `gs_hsk` | Trí nhớ Tâm sự; câu sai Cục súc; tiến độ HSK3 (mỗi loại ≤ 30 ghi chú) |
+| `gs_vocab`, `gs_reflex`, `gs_road` | Sổ từ; nhật ký phản xạ; tab lộ trình đang mở |
 | `gs_fix` | Sổ lỗi từ buổi gọi `{w, b, why, box, due}` (≤ 200), ôn cách quãng như sổ từ |
 | `gs_real` | Điểm thi IELTS thật người học tự nhập `{date, kind, band}` |
 | `gs_exam`, `gs_target` | Kỳ thi đang luyện; đích đến đang xem trong bảng điểm |
@@ -38,7 +40,7 @@
 | `data/langs.js` | Lời dặn + mã giọng + chữ viết được phép cho Đức/Hàn/Nhật/Đài | goethe.de, topik.go.kr, jlpt.jp, jpf, tocfl |
 | `data/us-civics.js` | 128 câu civics 2025, đáp án chấp nhận, danh sách từ đọc/viết | uscis.gov (tài liệu công) |
 
-Gọi REST trả JSON (`geminiJSON`, `responseMimeType: application/json`): tóm tắt sau buổi gọi (`summarizeCall`), chấm phát âm từ ghi âm (`pronCheck`, gửi `inline_data` âm thanh webm). Model ghim → 404 lùi bí danh như chat.
+Gọi REST trả JSON (`geminiJSON`, `responseMimeType: application/json`): tóm tắt sau buổi gọi (`summarizeCall`), chấm phát âm từ ghi âm (`pronCheck`, chuẩn hoá thành WAV mono 16 kHz rồi gửi `inline_data`; không giải mã được mới gửi blob gốc). Model ghim → 404 lùi bí danh như chat.
 
 Công cụ gọi thoại thêm: `show_card(title, text)`, `start_timer(label, prep_seconds, speak_seconds, kind, target_text)`, `save_exam_result(skill, overall, low, high, feedback)`.
 Mỗi lần đọc/ghi bọc `try/catch` (chế độ riêng tư có thể chặn).

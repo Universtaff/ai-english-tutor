@@ -2,6 +2,15 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-16 · v62 — vá lỗi sau đợt kiểm của Codex
+
+- Nối lại cuộc gọi: báo hết giờ (goAway) và rớt mạng dùng chung giới hạn 3 lần; hiện "Đang nối lại… (1/3)".
+- Luyện TOEFL/PTE/DET/civics không còn đổi band IELTS; Sam quên ghi khoảng điểm thì bài thi vẫn được lưu (IELTS tự lấy ±0,5).
+- Xoá hết dữ liệu: câu trả lời đến muộn không ghi dữ liệu cũ trở lại; xoá cả lựa chọn cảnh.
+- Tóm tắt sau buổi gọi dùng đúng lời thoại của cuộc gọi đó; đồng hồ thi hết đúng giờ.
+- Bản chuyển động mocap khoá theo mã commit; app mở được khi mạng yếu (lưu sẵn vỏ app nhỏ, tệp lớn lưu khi đã dùng).
+- QA 63 mục.
+
 ## 2026-11-16 · v61 — nâng cấp đợt 2 theo nghiên cứu đối thủ
 
 - Tóm tắt sau buổi gọi: lỗi chính + câu nói tự nhiên hơn + từ mới + gợi ý lần sau; lỗi vào sổ lỗi ôn cách quãng (🩹 trong thẻ Hôm nay), từ mới vào sổ từ.

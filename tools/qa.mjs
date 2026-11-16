@@ -42,10 +42,17 @@ const ghost = [...new Set([...docTxt.matchAll(/`((?:tools|bg)\/[\w\-.]+\.\w+)`/g
 check(!noSpec.length && !ghost.length, 'đặc tả docs/ đủ 8 phần, không nhắc tệp không tồn tại', [...noSpec, ...ghost].join(', '));
 const dirty = sh('git status --porcelain').split('\n').filter(Boolean).map(l => l.slice(3)), core = dirty.filter(f => /^(index\.html|xianxia\.mjs|mocap\.mjs|sam\.glb|bg\/)/.test(f));
 check(!core.length || dirty.includes('sw.js'), 'sw.js đã tăng phiên bản khi đổi mã/nội dung', 'đổi ' + core.slice(0, 3).join(', ') + ' mà chưa tăng gia-su-vNN');
+const headChanged = sh('git diff-tree --no-commit-id --name-only -r HEAD').split('\n').filter(Boolean), headCore = headChanged.filter(f => /^(index\.html|xianxia\.mjs|mocap\.mjs|sam\.glb|bg\/|data\/)/.test(f));
+const swHead = sh('git show HEAD:sw.js').match(/gia-su-v(\d+)/)?.[1], swPrev = sh('git show HEAD^:sw.js').match(/gia-su-v(\d+)/)?.[1];
+const swWork = read('sw.js').match(/gia-su-v(\d+)/)?.[1], releaseBump = core.length ? dirty.includes('sw.js') && +swWork > +swHead : !headCore.length || (headChanged.includes('sw.js') && +swHead > +swPrev);
+check(releaseBump, 'app đổi thì tăng phiên bản sw.js', `worktree ${swHead} → ${swWork}; commit ${swPrev} → ${swHead}`);
 const ahead = sh('git log origin/main..HEAD --oneline'); ahead ? warn('có commit chưa đẩy', ahead.split('\n').length + ' commit') : ok('mọi commit đã đẩy');
-const branch = [...html.matchAll(/cdn\.jsdelivr\.net\/(?:gh|npm)\/[^"'`\s]+?@(?:main|master|latest)\//g)].map(m => m[0]);
+const branch = files.filter(f => /\.(?:html|mjs|js)$/.test(f)).flatMap(f => [...read(f).matchAll(/cdn\.jsdelivr\.net\/(?:gh|npm)\/[^"'`\s]+?@(?:main|master|latest)\//g)].map(m => f + ': ' + m[0]));
 check(!branch.length, 'mã nạp từ CDN khoá đúng phiên bản (không @main/@master/@latest)', branch.join(', '));
 check(/addEventListener\('activate'[\s\S]*caches\.delete/.test(read('sw.js')), 'service worker xoá cache phiên bản cũ khi kích hoạt');
+const cached = new Set([...read('sw.js').matchAll(/['"]((?:data|bg)\/[^'"]+|(?:index\.html|manifest\.json|sam-(?:192|512)\.png|sam\.glb|xianxia\.mjs|mocap\.mjs))['"]/g)].map(m => m[1]));
+const cacheNeed = ['index.html','manifest.json','sam-192.png','sam-512.png','xianxia.mjs','mocap.mjs',...fs.readdirSync(path.join(ROOT,'data')).map(f=>'data/'+f)], cacheBig = [...cached].filter(f => f === 'sam.glb' || f.startsWith('bg/'));
+check(cacheNeed.every(f => cached.has(f)) && !cacheBig.length, 'service worker lưu sẵn đủ vỏ app, không lưu sẵn tệp lớn', [...cacheNeed.filter(f => !cached.has(f)), ...cacheBig.map(f => 'lớn: ' + f)].join(', '));
 const sw = read('sw.js').match(/gia-su-v(\d+)/)?.[1]; const sw0 = sh('git show HEAD:sw.js').match(/gia-su-v(\d+)/)?.[1]; if (sw && sw0 && +sw < +sw0) bad('sw.js lùi phiên bản', `${sw0} → ${sw}`);
 
 // ───────── QC: chạy thật ─────────
@@ -108,8 +115,8 @@ const scene = await ev(`(()=>{const h=window.Avatar.head,env=h.scene.getObjectBy
   return {env:!!env,v,plat,lights,fov:h.camera.fov,btn:document.getElementById('sceneBtn')?.textContent}})()`);
 check(scene?.env, 'cảnh tiên hiệp dựng được'); check(scene?.plat >= 1, 'bục 3D (bg/buc.glb) đã nạp'); check(scene?.lights >= 1, 'đèn điểm của đèn lồng có mặt');
 check(scene?.v?.length >= 1 && scene.v.every(x => !x.paused && x.w >= 1280), 'video nền chạy, ≥ 720p', JSON.stringify(scene?.v));
-const t1 = await ev(`(async()=>{const h=window.Avatar.head;const s=new Set();h.scene.traverse(o=>{const m=o.material?.map;if(m?.isVideoTexture)s.add(m.image)});const v=[...s][0];if(!v)return null;const a=v.currentTime;await new Promise(r=>setTimeout(r,1500));return +(v.currentTime-a).toFixed(2)})()`);
-check(t1 > 0.3, 'video thực sự tiến khung hình (không đứng hình)', 'tiến ' + t1 + ' s / 1,5 s');
+const t1 = await ev(`(async()=>{const h=window.Avatar.head,s=new Set();h.scene.traverse(o=>{const m=o.material?.map;if(m?.isVideoTexture)s.add(m.image)});const v=[...s][0];if(!v)return null;const a=v.currentTime;for(let i=0;i<16&&v.currentTime-a<=.3;i++)await new Promise(r=>setTimeout(r,500));return +(v.currentTime-a).toFixed(2)})()`);
+check(t1 > 0.3, 'video thực sự tiến khung hình (không đứng hình)', 'tiến ' + t1 + ' s trong tối đa 8 s');
 
 // bảng cảnh
 const panel = await ev(`(async()=>{const b=document.getElementById('sceneBtn'),p=document.getElementById('scenePanel');b.click();await new Promise(r=>setTimeout(r,200));const r=p.getBoundingClientRect(),cw=innerWidth,ch=innerHeight;
@@ -238,13 +245,16 @@ const so = await ev(`(async()=>{const r=[],h=Avatar.head,vids=[],c=document.getE
   if(!h.isRunning)r.push('hiện lại màn gọi mà không vẽ 3D');if(vids.length&&!vids.some(v=>!v.paused))r.push('hiện lại màn gọi mà video nền không chạy');return r})()`);
 check(okList(so), 'tiết kiệm pin: ẩn màn gọi dừng vẽ 3D + video nền, hiện lại thì chạy tiếp', Array.isArray(so) ? so.join('; ') : JSON.stringify(so));
 // "Xoá hết dữ liệu" phải xoá cả bản trong bộ nhớ: ghi lần sau không được lưu lại dữ liệu cũ.
-const rs = await ev(`(()=>{const r=[],cf=window.confirm,bk={};for(const k of Object.keys(localStorage))bk[k]=localStorage.getItem(k);
-  addVocab(['qaword = thử']);mem=['qa note'];store('gs_mem',mem);reflexLog=[{date:today(),unit:'R1-01',avg:1000,n:1}];store('gs_reflex',reflexLog);
+const rs = await ev(`(async()=>{const r=[],cf=window.confirm,bk={};for(const k of Object.keys(localStorage))bk[k]=localStorage.getItem(k);
+  addVocab(['qaword = thử']);mem=['qa note'];store('gs_mem',mem);reflexLog=[{date:today(),unit:'R1-01',avg:1000,n:1}];store('gs_reflex',reflexLog);fixes=[{w:'bad',b:'good',why:'QA',box:0,due:'2000-01-01'}];store('gs_fix',fixes);realScores=[{date:today(),kind:'Speaking',band:'6.0'}];store('gs_real',realScores);l2Mem.de=['QA'];store('gs_mem_de',l2Mem.de);localStorage.setItem('dn','dem');localStorage.setItem('wx','mua');localStorage.setItem('kv','hanoi');localStorage.setItem('dh','1');
+  const gj=geminiJSON;let resolveSum;geminiJSON=()=>new Promise(z=>resolveSum=z);summarizeCall({mode:'learn',turns:[{role:'user',text:'one'},{role:'user',text:'two'},{role:'user',text:'three'}]});
   window.confirm=()=>true;document.getElementById('reset').click();window.confirm=cf;
-  if(vocab.length||mem.length||lmem.length||reflexLog.length||phrMem.length||hskMem.length)r.push('còn dữ liệu trong bộ nhớ sau khi xoá');
+  resolveSum({summary:'QA không được hồi sinh',fixes:[{wrong:'x',better:'y'}],words:['z = z'],next:''});await Promise.resolve();await Promise.resolve();geminiJSON=gj;
+  if(vocab.length||mem.length||lmem.length||reflexLog.length||phrMem.length||hskMem.length||fixes.length||realScores.length||Object.keys(l2Mem).length)r.push('còn dữ liệu trong bộ nhớ sau khi xoá / response cũ hồi sinh');
+  if(['dn','wx','kv','dh'].some(k=>localStorage.getItem(k)!==null))r.push('Xoá hết dữ liệu vẫn giữ khoá cảnh');
   addVocab(['newword = mới']);const v=JSON.parse(localStorage.getItem('gs_vocab')||'[]');if(v.length!==1)r.push('ghi lần sau lưu lại từ cũ ('+v.length+' từ)');
   if(localStorage.getItem('gs_key')===null)r.push('xoá mất khoá API');
-  localStorage.clear();for(const k in bk)localStorage.setItem(k,bk[k]);vocab=load('gs_vocab',[]);mem=load('gs_mem',[]);reflexLog=load('gs_reflex',[]);return r})()`);
+  localStorage.clear();for(const k in bk)localStorage.setItem(k,bk[k]);vocab=load('gs_vocab',[]);mem=load('gs_mem',[]);reflexLog=load('gs_reflex',[]);fixes=load('gs_fix',[]);realScores=load('gs_real',[]);return r})()`);
 check(okList(rs), 'Xoá hết dữ liệu: xoá cả trong bộ nhớ, giữ khoá API', Array.isArray(rs) ? rs.join('; ') : JSON.stringify(rs));
 // Gọi không đứt ở phút ~10 (nối lại phiên), chờ người học nói xong, Giữ nút để nói — giả lập máy chủ Gemini Live.
 const lv = await ev(`(async()=>{const r=[],WS=window.WebSocket,socks=[],wait=ms=>new Promise(z=>setTimeout(z,ms)),msg=(ws,o)=>ws.onmessage({data:JSON.stringify(o)});
@@ -253,19 +263,19 @@ const lv = await ev(`(async()=>{const r=[],WS=window.WebSocket,socks=[],wait=ms=
   const s0=socks[0]?.sent[0]?.setup;if(!s0){window.WebSocket=WS;callEnd(live);return ['không gửi setup']}
   if(!s0.sessionResumption)r.push('thiếu sessionResumption');if(!s0.contextWindowCompression?.slidingWindow)r.push('thiếu nén ngữ cảnh');
   const ad=s0.realtimeInputConfig?.automaticActivityDetection;if(!(ad?.silenceDurationMs>=1200)||ad.endOfSpeechSensitivity!=='END_SENSITIVITY_LOW')r.push('chưa chỉnh chờ người nói: '+JSON.stringify(ad));
-  const L=live;msg(socks[0],{setupComplete:{}});msg(socks[0],{sessionResumptionUpdate:{newHandle:'h1',resumable:true}});msg(socks[0],{goAway:{timeLeft:'5s'}});await wait(150);
+  const L=live;msg(socks[0],{setupComplete:{}});msg(socks[0],{sessionResumptionUpdate:{newHandle:'h1',resumable:true}});if(!/BidiGenerateContent[?]key=/.test(socks[0].url))r.push('sai endpoint WebSocket Live');msg(socks[0],{goAway:{timeLeft:'5s'}});await wait(1700);
   if(socks.length!==2)r.push('goAway không mở kết nối mới');else{if(socks[1].sent[0]?.setup?.sessionResumption?.handle!=='h1')r.push('kết nối mới không dùng mã nối lại');msg(socks[1],{setupComplete:{}});if(socks[1].sent.length!==1)r.push('nối lại mà Sam chào lại')}
   if(live!==L)r.push('nối lại làm mất cuộc gọi');if(!L.stream||L.stream.getTracks().some(t=>t.readyState==='ended'))r.push('nối lại làm tắt micro');
   socks.at(-1).onclose({code:1006,reason:''});await wait(1800);if(socks.length!==3||live!==L)r.push('rớt mạng không tự nối lại');
   socks.at(-1).onclose({code:1011,reason:'RESOURCE_EXHAUSTED: quota'});await wait(300);if(live)r.push('hết lượt mà vẫn cố nối lại');if(!/Hết lượt/.test(document.getElementById('callStatus').textContent))r.push('hết lượt không báo giờ hồi');
   await callStart();await wait(150);const L2=live;msg(socks.at(-1),{setupComplete:{}});msg(socks.at(-1),{sessionResumptionUpdate:{newHandle:'h2',resumable:true}});
-  for(let i=0;i<4&&live===L2;i++){const n=socks.length;socks.at(-1).onclose({code:1006,reason:''});await wait(1800);if(live===L2&&socks.length===n+1)msg(socks.at(-1),{setupComplete:{}})}
-  if(live===L2)r.push('nối lại mãi không dừng (quá 3 lần)');
+  for(let i=0;i<4&&live===L2;i++){const n=socks.length;msg(socks.at(-1),{goAway:{}});await wait(1700);if(live===L2&&socks.length===n+1)msg(socks.at(-1),{setupComplete:{}})}
+  if(live===L2)r.push('goAway nối lại mãi không dừng (quá 3 lần)');
   callEnd(live);ptt=true;await callStart();await wait(150);const w=socks.at(-1);if(!w.sent[0]?.setup?.realtimeInputConfig?.automaticActivityDetection?.disabled)r.push('Giữ nút: chưa tắt tự nhận lượt');
   msg(w,{setupComplete:{}});const b=document.getElementById('callMute');if(!/Giữ để nói/.test(b.textContent))r.push('nút micro chưa đổi thành Giữ để nói');
   b.dispatchEvent(new PointerEvent('pointerdown',{pointerId:1,bubbles:true}));b.dispatchEvent(new PointerEvent('pointerup',{pointerId:1,bubbles:true}));
   const acts=w.sent.filter(x=>x.realtimeInput).map(x=>Object.keys(x.realtimeInput)[0]).join(',');if(acts!=='activityStart,activityEnd')r.push('giữ/thả không báo lượt: '+acts);
-  msg(socks.at(-1),{sessionResumptionUpdate:{newHandle:'h3',resumable:true}});b.dispatchEvent(new PointerEvent('pointerdown',{pointerId:2,bubbles:true}));msg(socks.at(-1),{goAway:{}});await wait(100);if(b.classList.contains('on'))r.push('nối lại lúc đang giữ nút mà nút kẹt sáng');
+  msg(socks.at(-1),{sessionResumptionUpdate:{newHandle:'h3',resumable:true}});b.dispatchEvent(new PointerEvent('pointerdown',{pointerId:2,bubbles:true}));msg(socks.at(-1),{goAway:{}});await wait(1700);if(b.classList.contains('on'))r.push('nối lại lúc đang giữ nút mà nút kẹt sáng');
   msg(socks.at(-1),{setupComplete:{}});b.dispatchEvent(new PointerEvent('pointerdown',{pointerId:3,bubbles:true}));callEnd(live);ptt=false;await callStart();if(b.classList.contains('on'))r.push('trạng thái nút micro dính sang cuộc gọi sau');
   callEnd(live);ptt=p0;window.WebSocket=WS;return r})()`);
 check(okList(lv), 'gọi: nối lại phiên khi goAway/rớt mạng (giữ micro, không chào lại) · chờ người nói · Giữ nút để nói', Array.isArray(lv) ? lv.join('; ') : JSON.stringify(lv));
@@ -289,14 +299,14 @@ check(ci?.k > 2 && ci?.d, 'tab IELTS dựng được, hộp Cài đặt mở đ�
 const ex = await ev(`(()=>{const r=[],D=window.SAM_DATA||{};if(!D.exams||Object.keys(D.exams).length<4)r.push('thiếu data/exams.js');if(Object.keys(D.langs||{}).length<4)r.push('thiếu data/langs.js');if((D.targets||[]).length<10)r.push('thiếu data/targets.js');if((D.usCivics?.questions||[]).length!==128)r.push('civics không đủ 128 câu');
   const e0=exam,c0=callMode,t0=tests.length;callMode='learn';exam='toefl';if(!/EXAM FOCUS — TOEFL/.test(systemPrompt()))r.push('chat chữ không có EXAM FOCUS TOEFL');if(!/start_timer/.test(livePrompt()))r.push('lời gọi TOEFL thiếu hướng dẫn đồng hồ');
   exam='civics';const p=livePrompt();if(!/USCIS/.test(p)||(p.match(/acceptable:/g)||[]).length!==20)r.push('phỏng vấn quốc tịch không đủ 20 câu');
-  exam='toefl';mode='SPEAKING';const p0=JSON.stringify(profile);takeTags('chấm thử <band>{"kind":"Speaking","overall":7,"FC":7,"LR":7,"GRA":7,"P":7}</band>');if(tests.length!==t0)r.push('đang luyện TOEFL mà vẫn lưu điểm IELTS');profile=JSON.parse(p0);exam='civics';const c1=civicsBlock(false),c2=civicsBlock(false);if(c1!==c2)r.push('bộ câu civics bị xáo lại mỗi tin nhắn');civicsSet=null;exam='toefl';mode='';takeTags('xong <score2>{"exam":"toefl","skill":"Writing","overall":4.5,"range":[4,5]}</score2>');const t=tests.at(-1);if(tests.length!==t0+1||t.range?.join()!=='4,5')r.push('thẻ score2 không lưu khoảng điểm');tests.splice(t0);store('ie_tests',tests);
+  exam='toefl';mode='SPEAKING';const p0=JSON.stringify(profile);takeTags('chấm thử <band>{"kind":"Speaking","overall":7,"FC":7,"LR":7,"GRA":7,"P":7}</band><profile>{"band":8,"weak":["QA"],"note":"QA"}</profile>');if(tests.length!==t0||JSON.stringify(profile)!==p0)r.push('đang luyện TOEFL mà vẫn lưu điểm/band IELTS');if(livePrompt().includes('After a few minutes, and whenever your picture of them changes, call save_profile'))r.push('lời gọi TOEFL vẫn yêu cầu save_profile');exam='civics';const c1=civicsBlock(false),c2=civicsBlock(false);if(c1!==c2)r.push('bộ câu civics bị xáo lại mỗi tin nhắn');civicsSet=null;exam='toefl';mode='';takeTags('xong <score2>{"exam":"toefl","skill":"Writing","overall":4.5,"range":[4,5]}</score2>');const t=tests.at(-1);if(tests.length!==t0+1||t.range?.join()!=='4,5')r.push('thẻ score2 không lưu khoảng điểm');takeTags('<score2>{"exam":"toefl","skill":"Writing","overall":4.5}</score2>');if(tests.length!==t0+2||tests.at(-1).range?.join()!=='4.5,4.5')r.push('Sam quên khoảng thì mất bài thi TOEFL');exam='ielts';mode='SPEAKING';takeTags('<band>{"kind":"Speaking","overall":6.5,"FC":6.5,"LR":6.5,"GRA":6,"P":6.5}</band>');if(tests.length!==t0+3||tests.at(-1).range?.join()!=='6.0,7.0')r.push('Sam quên khoảng thì mất bài thi IELTS (phải tự lấy ±0.5)');mode='';exam='toefl';tests.splice(t0);store('ie_tests',tests);profile=JSON.parse(p0);store('ie_profile',profile);
   exam=e0;callMode=c0;roadTab='I';renderRoad();if(!document.getElementById('examSel')||!document.getElementById('targetSel'))r.push('tab Kỳ thi thiếu chọn kỳ thi/đích đến');return r})()`);
 check(okList(ex), 'kỳ thi khác IELTS (TOEFL/civics) · thẻ score2 · tab Kỳ thi + bảng đích đến · đủ 4 tệp data', Array.isArray(ex) ? ex.join('; ') : JSON.stringify(ex));
 const tmr = await ev(`(async()=>{const r=[],w=wordMatch('The cat sat on the mat','the cat sat on mat');if(w.pct!==83||w.missed.join()!=='the')r.push('wordMatch sai '+JSON.stringify(w));
   const sent=[],L={ready:true,ws:{readyState:1,send:d=>sent.push(JSON.parse(d))},inT:'',outT:'',sources:[]};const lv0=live;live=L;document.getElementById('call').hidden=false;startTimer(L,{label:'Read Aloud',prep_seconds:0,speak_seconds:30,kind:'readAloud',target_text:'Hello world again'});
   if(document.getElementById('examCard').hidden)r.push('không hiện thẻ đồng hồ');L.task.said=' hello world';finishTask(L,false);const tx=document.getElementById('ecTimer').textContent;
   if(!/67%/.test(tx))r.push('không hiện % khớp: '+tx);if(sent.length)r.push('gửi số đo khi Sam còn đang nói (cắt lời Sam)');if(!/67%/.test(L.pendingNote||''))r.push('không giữ số đo để gửi sau');L.ready=true;onLive.call(null,L,{serverContent:{turnComplete:true}});const m=sent.at(-1);if(!m||m.clientContent.turnComplete!==false||!/67%/.test(m.clientContent.turns[0].parts[0].text))r.push('Sam nói xong mà không gửi số đo (hoặc bắt Sam nói tiếp)');startTimer(L,{label:'Part 2',prep_seconds:0,speak_seconds:120,kind:'free'});L.task.said=' I think';const fr=L.task;if(L.task.kind!=='free'||L.task.target)r.push('bài nói tự do dùng nhầm thẻ đề cũ làm câu gốc');if(L.task!==fr)r.push('đồng hồ Part 2 tự tắt');clearInterval(L.tid);L.task=null;
-  clearInterval(L.tid);document.getElementById('examCard').hidden=true;chatTimer({label:'Task 1',minutes:20});if(!/Task 1: 20:00/.test(document.getElementById('modeText').textContent))r.push('đồng hồ bài viết không chạy');setMode('');live=lv0;return r})()`);
+  clearInterval(L.tid);L.task=null;startTimer(L,{label:'QA 5 giây',prep_seconds:0,speak_seconds:5,kind:'free'});await new Promise(z=>setTimeout(z,5300));if(L.task)r.push('đồng hồ 5 giây chạy quá 5 giây');document.getElementById('examCard').hidden=true;chatTimer({label:'Task 1',minutes:20});if(!/Task 1: 20:00/.test(document.getElementById('modeText').textContent))r.push('đồng hồ bài viết không chạy');setMode('');live=lv0;return r})()`);
 check(okList(tmr), 'đồng hồ thi + thẻ đề: đo % từ khớp khi đọc to, gửi số đo cho Sam · đồng hồ bài viết', Array.isArray(tmr) ? tmr.join('; ') : JSON.stringify(tmr));
 const l2 = await ev(`(()=>{const r=[],c0=callMode,b=document.querySelector('#segMode2 .l2b');setCallMode('zh');const seen=[];for(let i=0;i<5;i++){b.click();seen.push(callMode)}
   if(seen.join()!=='de,ko,ja,tw,zh')r.push('xoay ngôn ngữ sai: '+seen.join());

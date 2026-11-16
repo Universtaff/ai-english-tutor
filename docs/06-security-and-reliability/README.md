@@ -1,12 +1,12 @@
 # 06 · Bảo mật và độ tin cậy
 
 ## Bảo mật
-- Khoá Gemini chỉ ở `localStorage` của máy người dùng; **không** có trong mã, commit, hay URL chia sẻ.
+- Khoá Gemini chỉ ở `localStorage` của máy người dùng; **không** có trong mã, commit, hay URL của REST (gửi bằng header). Live mở WebSocket thẳng tới Google bằng khoá (app không có máy chủ riêng để phát token tạm).
 - Repo công khai: `tools/qa.mjs` quét khoá (`AIza…`, `sk-…`, khoá riêng) và email nội bộ.
 - Mô tả cá nhân người dùng (`gs_about`) chỉ nằm trên máy.
 - Không bật micro khi chưa bấm Gọi; kết thúc gọi thì giải phóng micro + khoá màn hình — kể cả khi bấm Kết thúc lúc đang kết nối (micro/WebSocket mở xong sau đó phải được nhả ngay).
 - "Xoá hết dữ liệu" xoá cả trong bộ nhớ lẫn `localStorage`: trò chuyện, band, điểm, thi thử, sổ từ, nhật ký phản xạ, trí nhớ Tâm sự/Cục súc/HSK3. Chỉ giữ khoá API, model, phần "Sam nên biết gì về bạn" và chế độ đang chọn.
-- Mã chạy từ CDN phải khoá đúng phiên bản (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0); không trỏ vào nhánh (`@main`).
+- Mã và dữ liệu chạy từ CDN phải khoá đúng phiên bản/SHA (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0, mocap theo SHA); không trỏ vào nhánh (`@main`/`@master`).
 - Service worker xoá cache của phiên bản cũ khi phiên bản mới kích hoạt.
 - Đề thi: Sam chỉ tả khuôn đề và tự soạn câu hỏi cùng dạng; KHÔNG chép câu hỏi, bài mẫu, bảng tiêu chí nguyên văn của ETS/Pearson/Duolingo/Cambridge vào repo công khai. Bộ civics USCIS là tài liệu công của chính phủ Mỹ nên được chép, có ghi nguồn.
 - Ghi âm đọc theo (🎙) chỉ bật khi người dùng bấm, tự dừng sau 15 s, gửi một lần cho Gemini rồi bỏ, không lưu trên máy. Tóm tắt buổi gọi gửi lời thoại của chính buổi đó cho Gemini (cùng khoá free, Google có thể đọc).
