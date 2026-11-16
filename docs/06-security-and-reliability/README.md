@@ -27,6 +27,7 @@
 |---|---|
 | Video nền không tải | Dùng tranh tĩnh theo buổi |
 | `buc.glb` không tải | Đĩa ngọc trơn |
+| GitHub Pages trả 404/5xx thoáng qua (đang dựng bản mới) | Service worker dùng bản đã lưu (trang + tệp nhỏ); chưa từng lưu thì hiện lỗi gốc |
 | Open-Meteo lỗi/offline | Thời tiết "quang" |
 | Mocap không tải | Không cử chỉ mocap, các cử chỉ khác vẫn chạy |
 | Mất Gemini Live | Có mã nối lại: tự nối lại (≤ 3 lần liên tiếp, giữ micro + avatar). Không có / quá 3 lần: thông báo, bấm Gọi lại |

@@ -2,6 +2,10 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-16 · v64 — mở app không còn dính 404 lúc GitHub đang cập nhật
+
+- GitHub Pages trả 404/5xx thoáng qua (khi đang dựng bản mới) → app mở bằng bản đã lưu trên máy thay vì hiện trang lỗi.
+
 ## 2026-11-16 · v63 — nâng cấp đợt 3: nhập vai, gợi ý, cách học, chuỗi ngày
 
 - 🎭 Nhập vai (tab Lộ trình): 12 cảnh đời thật A2→B2 (gọi cà phê, nhận phòng trục trặc, khám bệnh, cửa khẩu sân bay, phỏng vấn xin việc, xin tăng lương…). Sam đóng vai người thật, không làm hộ; bạn tự đạt 3 mốc hiện trên thẻ; xong cảnh Sam nhận xét và lưu số mốc đạt.

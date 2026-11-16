@@ -43,13 +43,14 @@ check(!noSpec.length && !ghost.length, 'đặc tả docs/ đủ 8 phần, không
 const dirty = sh('git status --porcelain').split('\n').filter(Boolean).map(l => l.slice(3)), core = dirty.filter(f => /^(index\.html|xianxia\.mjs|mocap\.mjs|sam\.glb|bg\/)/.test(f));
 check(!core.length || dirty.includes('sw.js'), 'sw.js đã tăng phiên bản khi đổi mã/nội dung', 'đổi ' + core.slice(0, 3).join(', ') + ' mà chưa tăng gia-su-vNN');
 const headChanged = sh('git diff-tree --no-commit-id --name-only -r HEAD').split('\n').filter(Boolean), headCore = headChanged.filter(f => /^(index\.html|xianxia\.mjs|mocap\.mjs|sam\.glb|bg\/|data\/)/.test(f));
-const swHead = sh('git show HEAD:sw.js').match(/gia-su-v(\d+)/)?.[1], swPrev = sh('git show HEAD^:sw.js').match(/gia-su-v(\d+)/)?.[1];
+const swHead = sh('git show HEAD:sw.js').match(/gia-su-v(\d+)/)?.[1], swPrev = sh('git show HEAD~1:sw.js').match(/gia-su-v(\d+)/)?.[1];
 const swWork = read('sw.js').match(/gia-su-v(\d+)/)?.[1], releaseBump = core.length ? dirty.includes('sw.js') && +swWork > +swHead : !headCore.length || (headChanged.includes('sw.js') && +swHead > +swPrev);
 check(releaseBump, 'app đổi thì tăng phiên bản sw.js', `worktree ${swHead} → ${swWork}; commit ${swPrev} → ${swHead}`);
 const ahead = sh('git log origin/main..HEAD --oneline'); ahead ? warn('có commit chưa đẩy', ahead.split('\n').length + ' commit') : ok('mọi commit đã đẩy');
 const branch = files.filter(f => /\.(?:html|mjs|js)$/.test(f)).flatMap(f => [...read(f).matchAll(/cdn\.jsdelivr\.net\/(?:gh|npm)\/[^"'`\s]+?@(?:main|master|latest)\//g)].map(m => f + ': ' + m[0]));
 check(!branch.length, 'mã nạp từ CDN khoá đúng phiên bản (không @main/@master/@latest)', branch.join(', '));
 check(/addEventListener\('activate'[\s\S]*caches\.delete/.test(read('sw.js')), 'service worker xoá cache phiên bản cũ khi kích hoạt');
+check(/r\.ok[\s\S]*return c \|\| r/.test(read('sw.js')), 'mạng trả 404/5xx thì service worker lùi về bản đã lưu');
 const cached = new Set([...read('sw.js').matchAll(/['"]((?:data|bg)\/[^'"]+|(?:index\.html|manifest\.json|sam-(?:192|512)\.png|sam\.glb|xianxia\.mjs|mocap\.mjs))['"]/g)].map(m => m[1]));
 const cacheNeed = ['index.html','manifest.json','sam-192.png','sam-512.png','xianxia.mjs','mocap.mjs',...fs.readdirSync(path.join(ROOT,'data')).map(f=>'data/'+f)], cacheBig = [...cached].filter(f => f === 'sam.glb' || f.startsWith('bg/'));
 check(cacheNeed.every(f => cached.has(f)) && !cacheBig.length, 'service worker lưu sẵn đủ vỏ app, không lưu sẵn tệp lớn', [...cacheNeed.filter(f => !cached.has(f)), ...cacheBig.map(f => 'lớn: ' + f)].join(', '));

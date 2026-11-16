@@ -1,5 +1,5 @@
 // Lưu sẵn vỏ app nhỏ (~vài trăm KB); tệp lớn (nhân vật 12 MB, video, cảnh) lưu khi thực sự dùng tới — không bắt điện thoại tải 26 MB mỗi bản mới. Gọi AI vẫn cần mạng.
-const C = 'gia-su-v63';
+const C = 'gia-su-v64';
 const ASSETS = ['./', 'index.html', 'manifest.json', 'sam-192.png', 'sam-512.png', 'xianxia.mjs', 'mocap.mjs',
   'data/targets.js', 'data/exams.js', 'data/langs.js', 'data/us-civics.js', 'data/missions.js'];
 self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
@@ -8,9 +8,11 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const u = new URL(e.request.url), local = u.origin === self.location.origin, cdn = u.hostname === 'cdn.jsdelivr.net';
   if (!local && !cdn) return;
-  e.respondWith(fetch(e.request).then(r => {
-    if (r.ok || r.type === 'opaque') caches.open(C).then(c => c.put(e.request, r.clone())).catch(() => {});
-    return r;
+  e.respondWith(fetch(e.request).then(async r => {
+    if (r.ok || r.type === 'opaque') { caches.open(C).then(c => c.put(e.request, r.clone())).catch(() => {}); return r; }
+    // GitHub Pages trả 404/5xx thoáng qua lúc đang dựng bản mới → dùng bản đã lưu thay vì hiện trang lỗi
+    const c = local && (await caches.match(e.request, { ignoreSearch: true }) || (e.request.mode === 'navigate' && await caches.match('./')));
+    return c || r;
   }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(async r => {
     if (r) return r;
     if (local && e.request.mode === 'navigate') return caches.match('./');
