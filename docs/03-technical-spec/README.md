@@ -65,6 +65,12 @@ Khung đặt bằng `head.setView('full', {cameraDistance, cameraY, cameraRotate
 
 `GRAMMAR` (G1–G4) và `VOCAB` (V1–V4) = 40 bài mỗi mảng, gộp vào `EXTRA`; `unitById` tìm cả `UNITS` (IELTS) lẫn `EXTRA`. `lessonText(u)` chọn nội dung bài theo `u.track`. Điểm bài lưu chung `ie_scores`. Sổ từ `gs_vocab` (tối đa 600 từ, `addVocab`/`reviewVocab`/`dueWords`, Leitner hộp 0–4 → 1·3·7·14·30 ngày): Sam thêm từ bằng thẻ `<words>` cuối bài từ vựng; lệnh `[WORDS] a = nghĩa; b = nghĩa` ôn tối đa 10 từ đến hạn và trả `<review>{ok,miss}</review>`. `renderRoad` có 3 tab (`roadTab`, lưu `gs_road`).
 
+### Nhập vai (🎭), gợi ý, cách học, chuỗi ngày
+`MISSIONS` = `SAM_DATA.missions` (`{id, t, lvl, role (EN, cho Sam), goal + steps (VI, cho người học)}`). `startMission(id)` cần khoá (chưa có thì mở Cài đặt), luôn chuyển sang Học (luật Cục súc phá vai), gọi `callStart(text, null, mission)` với lời mở `[MISSION id] … You play … goal … checkpoints`; `L.mission` + `showCard` hiện mục tiêu và mốc. Luật ROLE-PLAY MISSION nằm trong `livePrompt()`: không làm hộ, trừ khi người học bấm 💡; gọi `complete_mission` TRƯỚC khi nhận xét để cúp máy giữa chừng không mất kết quả. Tool `complete_mission(met, total, feedback)` → `misDone[id] = {date, met, total, hints}` (`gs_mis`).
+Nút `#callTip` (💡 Gợi ý) → `tellSam(L, HINT)`; `L.hints` đếm số lần; bấm dồn trong 4 s bị bỏ qua. Mức sửa lỗi chỉ áp cho trò chuyện tự do, không áp lúc thi thử / nhập vai / phản xạ.
+`corr` (`gs_corr`: `now`/`light`/`end`) → `corrRule(voice)` chèn vào lời dặn Học (chat chữ + gọi); `speed` (`gs_speed`: `slow`/`normal`/`fast`) → `speedRule()` nối vào `systemInstruction` của mọi cuộc gọi, và `speak()` nhân `rate` 0,8 / 1 / 1,15.
+`markDay()` ghi ngày học vào `days` (`gs_days`, ≤ 400 ngày) khi `send` nhận được trả lời hoặc cuộc gọi có lượt nói của người học; `streak()` đếm ngày liên tiếp.
+
 ### Phản xạ (⚡) và thẻ Hôm nay
 
 `REFLEX` (R1–R3, 30 bài) nằm trong `EXTRA`. `startDrill(id)` mở cuộc gọi với `[REFLEX id]`; luật REFLEX DRILL nằm trong `livePrompt()` nên chế độ Cục súc kế thừa. Đo phản xạ: `callUI` bấm giờ khi chuyển sang `listening` (Sam nói xong), bộ worklet micro dừng giờ ở khúc thứ 3 liên tiếp có RMS > 0,03 (`voiceLevel`); bỏ số < 150 ms hoặc > 15 s; hiện trên thanh trạng thái. Hết cuộc gọi `logDrill` lưu `{date, unit, avg, n}` vào `gs_reflex` (tối đa 200 buổi). Sam gọi `save_drill` → `saveDrill` chấm điểm 0–10 vào `ie_scores`. `todayCard()` gom: 1 bài phản xạ, ôn từ đến hạn, 1 bài từ mới, 1 bài ngữ pháp, gọi tự do.

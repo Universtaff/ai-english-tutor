@@ -23,7 +23,9 @@ Không dùng token tạm (ephemeral token): token phải xin từ chính trình 
 | `ie_profile`, `ie_hist`, `ie_mode`, `ie_unit`, `ie_scores`, `ie_tests` | Hồ sơ band, lịch sử chat, chế độ, bài đang học, điểm, bài thi |
 | `dn`, `wx`, `kv` | Buổi, thời tiết, khu vực (`auto` hoặc giá trị chọn tay) |
 | `dh` | Đã hiện gợi ý "kéo để xoay" |
-| `gs_ptt` | Bật "Giữ nút để nói" trong cuộc gọi |
+| `gs_ptt`, `gs_corr`, `gs_speed` | Cài đặt: Giữ nút để nói; mức sửa lỗi chế độ Học (`now`/`light`/`end`); tốc độ nói của Sam (`slow`/`normal`/`fast`) |
+| `gs_mis` | Kết quả nhập vai `{id: {date, met, total, hints}}` |
+| `gs_days` | Các ngày có học (`YYYY-MM-DD`, ≤ 400) để tính chuỗi ngày |
 | `gs_lmem` | Trí nhớ chế độ Học (≤ 30 ghi chú) |
 | `gs_mem`, `gs_phr`, `gs_hsk` | Trí nhớ Tâm sự; câu sai Cục súc; tiến độ HSK3 (mỗi loại ≤ 30 ghi chú) |
 | `gs_vocab`, `gs_reflex`, `gs_road` | Sổ từ; nhật ký phản xạ; tab lộ trình đang mở |
@@ -37,12 +39,13 @@ Không dùng token tạm (ephemeral token): token phải xin từ chính trình 
 |---|---|---|
 | `data/exams.js` | Dạng bài Nói/Viết, thời gian, tiêu chí (diễn đạt lại), thang điểm, khuôn thẻ `<score2>` của IELTS GT, TOEFL 2026, PTE, DET | Trang chính thức ETS/Pearson/Duolingo/IELTS (link trong tệp) |
 | `data/targets.js` | Điểm cần theo đích đến (định cư, du học, đi làm), `verified:false` khi nguồn bên thứ ba | IRCC, Home Affairs (qua bản sao), GOV.UK, make-it-in-germany… |
+| `data/missions.js` | 12 nhiệm vụ nhập vai: vai của Sam (EN), mục tiêu + 3 mốc (VI), cấp A2–B2 | Tự soạn (khuôn "nhiệm vụ" học từ Immergo, Apache-2.0 — chỉ ý tưởng, không chép mã) |
 | `data/langs.js` | Lời dặn + mã giọng + chữ viết được phép cho Đức/Hàn/Nhật/Đài | goethe.de, topik.go.kr, jlpt.jp, jpf, tocfl |
 | `data/us-civics.js` | 128 câu civics 2025, đáp án chấp nhận, danh sách từ đọc/viết | uscis.gov (tài liệu công) |
 
 Gọi REST trả JSON (`geminiJSON`, `responseMimeType: application/json`): tóm tắt sau buổi gọi (`summarizeCall`), chấm phát âm từ ghi âm (`pronCheck`, chuẩn hoá thành WAV mono 16 kHz rồi gửi `inline_data`; không giải mã được mới gửi blob gốc). Model ghim → 404 lùi bí danh như chat.
 
-Công cụ gọi thoại thêm: `show_card(title, text)`, `start_timer(label, prep_seconds, speak_seconds, kind, target_text)`, `save_exam_result(skill, overall, low, high, feedback)`.
+Công cụ gọi thoại thêm: `complete_mission(met, total, feedback)`, `show_card(title, text)`, `start_timer(label, prep_seconds, speak_seconds, kind, target_text)`, `save_exam_result(skill, overall, low, high, feedback)`.
 Mỗi lần đọc/ghi bọc `try/catch` (chế độ riêng tư có thể chặn).
 
 ## Khu vực (`REGIONS`)

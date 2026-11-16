@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#6e1230">
 <title>Sam · luyện IELTS</title>
 <link rel="manifest" href="manifest.json">
-<script src="data/targets.js"></script><script src="data/exams.js"></script><script src="data/langs.js"></script><script src="data/us-civics.js"></script>
+<script src="data/targets.js"></script><script src="data/exams.js"></script><script src="data/langs.js"></script><script src="data/us-civics.js"></script><script src="data/missions.js"></script>
 <link rel="icon" href="sam-192.png">
 <script type="importmap">{"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js/+esm",
@@ -88,7 +88,9 @@
   dialog::backdrop { background:#1a0b1680; -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
   dialog h3 { margin:0 0 8px; }
   dialog label { display:block; margin:12px 0 4px; font-weight:600; font-size:14px; }
-  dialog input, dialog textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; font:inherit; background:var(--bg); }
+  #ecText { white-space:pre-line; } .streak { margin:-2px 0 8px; font-weight:700; font-size:14px; color:#b45309; }
+  #roadTabs { flex-wrap:wrap; } #roadTabs button { flex:1 0 30%; }
+  dialog input, dialog textarea, dialog select { width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; font:inherit; background:var(--bg); }
   dialog textarea { font-size:14px; }
   .row { display:flex; gap:8px; margin-top:16px; }
   .row button { flex:1; padding:11px; border-radius:12px; border:1px solid var(--main); background:#fff; color:var(--main); font-weight:600; }
@@ -109,7 +111,7 @@
   #callStatus:empty, #call .cap:empty { display:none; }
   .cap { font-size:15px; line-height:1.4; max-width:min(520px,100%); padding:6px 12px; border-radius:14px; max-height:5.4em; overflow:hidden; }
   #callSam { color:#ffd6e7; }
-  .callBtns { display:flex; align-items:flex-start; justify-content:center; gap:24px; margin-top:8px; }
+  .callBtns { display:flex; align-items:flex-start; justify-content:center; gap:clamp(10px, 4vw, 24px); margin-top:8px; }
   .cb { display:flex; flex-direction:column; align-items:center; gap:6px; border:0; background:none; color:#fff; font-size:12.5px; font-weight:700; padding:0; text-shadow:0 1px 2px #000, 0 0 8px #000c; }
   .cb i { display:grid; place-items:center; width:58px; height:58px; border-radius:50%; transition:transform .1s; }
   .cb:active i { transform:scale(.94); }
@@ -188,6 +190,7 @@
     <button class="cb" id="callRoad"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></i>Lộ trình</button>
   </div>
   <div class="callBtns" id="callLive" hidden>
+    <button class="cb" id="callTip"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></i>Gợi ý</button>
     <button class="cb" id="callMute"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></i><span>Tắt mic</span></button>
     <button class="cb end" id="callStop"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></i>Kết thúc</button>
     <button class="cb" id="callExam"><i class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></i>Thi thử</button>
@@ -221,6 +224,10 @@
   <p class="hint">Lấy khoá free tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Khoá chỉ lưu trên máy này.</p>
   <p class="hint">⚠️ Khoá Gemini miễn phí: chỉ dành cho người từ 18 tuổi; Google có thể đọc nội dung để cải thiện dịch vụ, đừng kể thông tin nhạy cảm.</p>
   <label class="chk"><input type="checkbox" id="ptt"> Giữ nút để nói (Sam không bao giờ cắt lời)</label>
+  <label for="corr">Sửa lỗi (chế độ Học)</label>
+  <select id="corr"><option value="now">Sửa ngay mọi lỗi, bắt nói lại</option><option value="light">Vừa phải: lỗi nào đáng mới sửa</option><option value="end">Chỉ cuối buổi (tóm tắt sau cuộc gọi)</option></select>
+  <label for="speed">Tốc độ nói của Sam</label>
+  <select id="speed"><option value="slow">Chậm, rõ từng cụm</option><option value="normal">Bình thường</option><option value="fast">Nhanh như người bản xứ</option></select>
   <label for="about">Sam nên biết gì về bạn</label>
   <textarea id="about" rows="6" placeholder="Bạn làm nghề gì, thích gì, muốn Sam nói chuyện kiểu nào… (chỉ lưu trên máy này)"></textarea>
   <label for="model">Model</label>
@@ -423,6 +430,20 @@ const EXTRA = [...GRAMMAR, ...VOCAB, ...REFLEX];
 // Nhật ký phản xạ: mỗi buổi luyện lưu thời gian từ lúc Sam nói xong tới lúc bạn bắt đầu nói (đo bằng micro).
 let reflexLog = load('gs_reflex', []); // {date, unit, avg, n}
 const voiceLevel = a => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); }; // độ to (RMS) một khúc mẫu micro
+const markDay = () => { const d = today(); if (days.at(-1) !== d) { days = [...days.filter(x => x !== d), d].slice(-400); store('gs_days', days); } };
+function streak() { const s = new Set(days), d = new Date(); if (!s.has(today())) d.setDate(d.getDate() - 1); let n = 0; while (s.has(d.toLocaleDateString('sv'))) { n++; d.setDate(d.getDate() - 1); } return n; }
+const corrRule = voice => corr === 'now' ? `CORRECTIONS — the learner chose "fix everything now" (in free conversation only — never during a mock test, a [MISSION] scene or a [REFLEX] drill; there it overrides the lighter correction rule above): correct EVERY real mistake in their English right away, in the same turn: give the natural version${voice ? ' and have them say it once' : ' on a ✏️ line (more than one ✏️ line is fine)'}, then carry on.`
+  : corr === 'end' ? `CORRECTIONS — the learner chose "only at the end" (in free conversation; tests and drills keep their own rules): do NOT correct their English during the conversation${voice ? '' : ' (no ✏️ lines; 💡 lines for their Vietnamese are still fine)'} and don't start phrase drills on your own — only when they ask how to say something. ${voice ? 'Their mistakes are reviewed in the summary after the call.' : 'If they ask for feedback, give it then.'}` : '';
+const speedRule = () => speed === 'slow' ? '\nSPEAKING SPEED (learner setting): speak clearly SLOWER than a normal native speaker, with short pauses between phrases, but keep natural intonation.'
+  : speed === 'fast' ? '\nSPEAKING SPEED (learner setting): speak at full natural native speed with real connected speech — they want to train their ear.' : '';
+const HINT = "(I tapped the HINT button — I'm stuck. Step out for one line only: give me 2 short, natural things I could say next in the language we are practising, slowly, each with a few Vietnamese words of meaning. Then stop and wait for me to try.)";
+function startMission(id) { // nhiệm vụ nhập vai: luôn gọi ở chế độ Học (luật Cục súc "chửi + bắt nói lại" phá vai), Sam đóng vai, thẻ mục tiêu hiện trên màn gọi
+  const m = MISSIONS.find(x => x.id === id); if (!m || live) return;
+  if (!key) { $('#set').showModal(); return; }
+  if (callMode !== 'learn') setCallMode('learn');
+  $('#call').hidden = false;
+  callStart(`[MISSION ${id}] Role-play mission "${m.t}". You play: ${m.role}. The learner's goal: ${m.goal} Checkpoints: ${m.steps.map((s, i) => `${i + 1}) ${s}`).join(' ')}`, null, m);
+}
 function startDrill(id) {
   const u = unitById(id); if (!u) return;
   if (callMode === 'chat' || isL2(callMode)) setCallMode('learn');
@@ -495,6 +516,9 @@ const L2_ORDER = ['zh', ...Object.keys(LANGS)], isL2 = m => m === 'zh' || !!LANG
 const l2Mem = {}, memOf = c => (l2Mem[c] ||= load('gs_mem_' + c, [])); // trí nhớ riêng từng ngôn ngữ
 let exam = load('gs_exam', 'ielts'); if (exam !== 'ielts' && !(exam === 'civics' && SD.usCivics) && !EXAMS[exam]) exam = 'ielts';     // ghi chú tiến độ tiếng Trung (từ đã học, âm điệu hay sai), chỉ lưu trên máy
 let lmem = load('gs_lmem', []), roastBase = false; // roastBase: đang dựng lời dặn Học làm nền cho Cục súc → bỏ trí nhớ Học      // chế độ Học: chuyện đã kể, chủ đề đã nói, việc còn dở (chỉ lưu trên máy)
+let corr = load('gs_corr', 'light'), speed = load('gs_speed', 'normal'); // cách học: mức sửa lỗi chế độ Học · tốc độ nói của Sam
+let days = load('gs_days', []), misDone = load('gs_mis', {}); // ngày có học (chuỗi 🔥) · kết quả nhập vai
+const MISSIONS = (window.SAM_DATA || {}).missions || [];
 let ptt = load('gs_ptt', false);      // Giữ nút để nói: tắt tự nhận lượt, Sam không bao giờ cắt lời
 let mem = load('gs_mem', []);        // ghi chú ngắn Sam rút ra sau mỗi buổi tâm sự (chỉ lưu trên máy)
 let hist = load('ie_hist', []);      // {role:'user'|'model', text}
@@ -637,7 +661,7 @@ CASUAL CHAT (default, and after [TALK]):
 - Often steer naturally toward common IELTS Speaking topics (${TOPICS}) and sometimes ask a real Part 1 or Part 3 style question in a casual way — never announce it as a test.
 - Whenever their message contains any Vietnamese, first show how a native would say it on a line starting with "💡 " (e.g. "💡 Người bản xứ sẽ nói: I'm wiped out today."), then reply. Never use "💡" for anything else.
 - At most ONE line at the end starting with "✏️ ": either fix a mistake that matters, or, if their sentence was correct but sounded textbook, show how a native would say it ("✏️ Tự nhiên hơn: …"), with a few Vietnamese words of why. Skip it when nothing is worth it. Never correct their Vietnamese — ✏️ is only for their English.
-
+${roastBase || corr === 'light' ? '' : '- ' + corrRule(false) + String.fromCharCode(10)}
 ACTIVITIES (explanations may be in Vietnamese; every English sentence meant to be read aloud goes on its own line starting with "🗣 "; ONE step per reply and wait for the learner; when finished add <done/> and invite them back to chatting):
 [SPEAKING] Full mock Speaking test, behave like a real examiner: Part 1 — 4 questions on 1–2 familiar topics, one at a time; Part 2 — give a cue card (topic + 4 bullet prompts), tell them in Vietnamese they have 1 minute to prepare then should talk for 1–2 minutes in ONE message (they may record several times with 🎤 before sending); one short follow-up question; Part 3 — 4 deeper discussion questions linked to Part 2, one at a time. No feedback during the test. At the end: an honest half-band RANGE (e.g. 6.0–6.5) for each criterion and the overall, with one quoted sentence of theirs as evidence for each criterion, and a reminder in Vietnamese that this is an estimate — criterion by criterion: Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation (say Pronunciation is only estimated from the speech-to-text transcript) — and the overall band (IELTS rounding), 3 concrete things to fix, and a native-speaker / band-8 version of two of their answers on 🗣 lines. The SAME reply that gives the scores must end with exactly <band>{"kind":"Speaking","overall":N,"range":[low,high],"FC":N,"LR":N,"GRA":N,"P":N}</band> (overall = middle of the range), a profile tag, <done/>.
 [WRITING] Ask them to paste the task prompt and their essay (Task 1 or Task 2) if they have not. Then mark like an examiner: an honest half-band RANGE with one quoted sentence as evidence for each of Task Achievement/Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy, overall; list the main errors with corrections; rewrite their introduction and one body paragraph at band 8 (plain lines, no 🗣 — writing is not read aloud). The SAME reply that gives the scores must end with exactly <band>{"kind":"Writing","overall":N,"range":[low,high],"TA":N,"CC":N,"LR":N,"GRA":N}</band> (overall = middle of the range), a profile tag, <done/>.
@@ -780,18 +804,32 @@ function renderRoad() {
   const road = $('#road'); road.innerHTML = '';
   const tabs = el('div'); tabs.id = 'roadTabs';
   road.append(todayCard());
-  for (const [k, label] of [['I', '🎯 Kỳ thi'], ['R', '⚡ Phản xạ'], ['G', 'Ngữ pháp'], ['V', 'Từ vựng']]) {
+  for (const [k, label] of [['I', '🎯 Kỳ thi'], ['M', '🎭 Nhập vai'], ['R', '⚡ Phản xạ'], ['G', 'Ngữ pháp'], ['V', 'Từ vựng']]) {
     const b = el('button', roadTab === k ? 'on' : '', label); b.onclick = () => { roadTab = k; store('gs_road', k); renderRoad(); }; tabs.append(b);
   }
   road.append(tabs);
+  if (roadTab === 'M') return renderMissions(road);
   if (roadTab !== 'I') return renderTrack(road, roadTab);
   renderIelts(road);
+}
+function renderMissions(road) {
+  const c = el('div', 'card missions'), n = MISSIONS.filter(m => misDone[m.id]).length;
+  c.append(el('h2', '', `🎭 Nhập vai · đã chơi ${n}/${MISSIONS.length}`), el('p', 'hint', 'Sam đóng vai người thật trong một cảnh đời thường; bạn phải tự đạt 3 mốc bằng lời của mình. Bí thì bấm 💡 Gợi ý trong cuộc gọi.'));
+  const nx = MISSIONS.find(m => !misDone[m.id]);
+  for (const m of MISSIONS) {
+    const r = misDone[m.id], row = el('div', 'unit' + (m === nx ? ' next' : '')), t = el('div', 't'), b = el('button', '', r ? 'Chơi lại' : 'Gọi');
+    b.setAttribute('aria-label', (r ? 'Chơi lại: ' : 'Gọi: ') + m.t);
+    t.append(el('b', '', `${m.lvl} · ${m.t}`), el('small', '', r ? `${r.met ? '✓ ' : ''}đạt ${r.met}/${r.total} mốc · ${r.date}` : m.goal));
+    b.onclick = () => startMission(m.id); row.append(t, b); c.append(row);
+  }
+  road.append(c);
 }
 // Thẻ "Hôm nay": gom 4 việc mỗi ngày từ mọi lộ trình, việc nào đã làm hôm nay thì đánh dấu ✓.
 function todayCard() {
   const nextOf = l => l.find(u => !scores[u.id]) || l[l.length - 1], doneToday = l => l.some(u => scores[u.id]?.date === today());
   const r = nextOf(REFLEX), v = nextOf(VOCAB), g = nextOf(GRAMMAR), due = dueWords().length;
   const c = el('div', 'card today'); c.append(el('h2', '', '📅 Hôm nay học gì (~30 phút)'));
+  const sk = streak(); c.append(el('p', 'streak', sk ? `🔥 ${sk} ngày liên tiếp${days.includes(today()) ? '' : ' · học hôm nay để giữ chuỗi'}` : '🔥 Học hôm nay để bắt đầu chuỗi ngày'));
   const items = [
     [`⚡ Phản xạ 5 phút: ${r.t}`, doneToday(REFLEX) || reflexLog.some(x => x.date === today()), () => startDrill(r.id)],
     [due ? `🔁 Ôn ${due} từ đến hạn` : '🔁 Không có từ đến hạn', !due, startWords],
@@ -936,7 +974,7 @@ function speak(t) {
   if (!t || !window.speechSynthesis) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(t);
-  const zh = /[一-鿿]/.test(t), L = LANGS[callMode]?.speechLang || (zh ? 'zh-CN' : 'en-US'); u.lang = L; u.rate = zh ? 0.85 : 0.95;
+  const zh = /[一-鿿]/.test(t), L = LANGS[callMode]?.speechLang || (zh ? 'zh-CN' : 'en-US'); u.lang = L; u.rate = (zh ? 0.85 : 0.95) * ({ slow: 0.8, fast: 1.15 }[speed] || 1);
   const vs = speechSynthesis.getVoices(), lang = v => v.lang.replace('_', '-'); // Chrome Android ghi en_US
   const v = vs.find(v => lang(v) === L) || vs.find(v => lang(v).startsWith(L.slice(0, 2)));
   if (v) u.voice = v;
@@ -1078,7 +1116,7 @@ async function send(text) {
     const answer = await askAI(t => wait.textContent = t);
     if (epoch !== dataEpoch) { wait.remove(); return; }
     const shown = takeTags(answer);
-    hist.push({ role: 'model', text: shown });
+    hist.push({ role: 'model', text: shown }); markDay();
     store('ie_hist', hist.slice(-MAX_HIST));
     wait.remove();
     render(hist.at(-1));
@@ -1131,18 +1169,18 @@ $('#stop').onclick = () => send('[TALK]');
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
 $('#level').onclick = () => show('vRoad');
 
-$('#openSet').onclick = () => { $('#key').value = key; $('#model').value = model; $('#about').value = about; $('#ptt').checked = ptt; $('#set').showModal(); };
+$('#openSet').onclick = () => { $('#key').value = key; $('#model').value = model; $('#about').value = about; $('#ptt').checked = ptt; $('#corr').value = corr; $('#speed').value = speed; $('#set').showModal(); };
 $('#save').onclick = () => {
   key = $('#key').value.trim(); model = $('#model').value.trim() || DEFAULT_MODEL;
-  about = $('#about').value.trim(); ptt = $('#ptt').checked; store('gs_ptt', ptt);
+  about = $('#about').value.trim(); ptt = $('#ptt').checked; store('gs_ptt', ptt); corr = $('#corr').value; speed = $('#speed').value; store('gs_corr', corr); store('gs_speed', speed);
   store('gs_key', key); store('gs_model', model); store('gs_about', about); $('#set').close();
 };
 $('#reset').onclick = () => {
   if (!confirm('Xoá toàn bộ trò chuyện, band, điểm, lịch sử thi thử, sổ từ, nhật ký phản xạ và trí nhớ của Sam? (Giữ khoá API và phần giới thiệu bản thân.)')) return;
   dataEpoch++; profile = { band: '', weak: [], note: '' }; hist = []; scores = {}; tests = []; unit = '';
-  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; for (const k in l2Mem) delete l2Mem[k]; exam = 'ielts'; civicsSet = null; fixes = []; realScores = []; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
+  vocab = []; reflexLog = []; mem = []; lmem = []; phrMem = []; hskMem = []; for (const k in l2Mem) delete l2Mem[k]; exam = 'ielts'; civicsSet = null; fixes = []; realScores = []; days = []; misDone = {}; roadTab = 'I'; // xoá cả bản trong bộ nhớ, không thì lần ghi sau lưu lại dữ liệu cũ
   try { localStorage.clear(); } catch {}
-  store('gs_key', key); store('gs_model', model); store('gs_about', about); store('gs_mode', callMode); // chỉ giữ đúng 4 mục đã công bố
+  store('gs_key', key); store('gs_model', model); store('gs_about', about); store('gs_mode', callMode); store('gs_ptt', ptt); store('gs_corr', corr); store('gs_speed', speed); // chỉ giữ khoá, model, giới thiệu, chế độ và tuỳ chọn Cài đặt
   $('#chat').innerHTML = ''; setMode(''); showLevel(); greet(); $('#set').close();
 };
 
@@ -1162,6 +1200,8 @@ const LIVE_TOOLS = [{ functionDeclarations: [
     parameters: { type: 'OBJECT', properties: { overall: { type: 'NUMBER' }, low: { type: 'NUMBER' }, high: { type: 'NUMBER' }, FC: { type: 'NUMBER' }, LR: { type: 'NUMBER' }, GRA: { type: 'NUMBER' }, P: { type: 'NUMBER' } }, required: ['overall', 'low', 'high', 'FC', 'LR', 'GRA', 'P'] } },
   { name: 'save_drill', description: 'Save the result of a finished [REFLEX] drill',
     parameters: { type: 'OBJECT', properties: { unit: { type: 'STRING' }, correct: { type: 'NUMBER' }, total: { type: 'NUMBER' } }, required: ['correct', 'total'] } },
+  { name: 'complete_mission', description: 'Save the result of a finished [MISSION] role-play: how many checkpoints the learner reached',
+    parameters: { type: 'OBJECT', properties: { met: { type: 'NUMBER' }, total: { type: 'NUMBER' }, feedback: { type: 'STRING' } }, required: ['met', 'total'] } },
   { name: 'show_card', description: 'Show a text card on the learner screen (task instructions, a text to read aloud, a cue card)',
     parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, text: { type: 'STRING' } }, required: ['text'] } },
   { name: 'start_timer', description: 'Start an exam timer: optional preparation, then speaking time. kind: free | readAloud | repeat. For readAloud/repeat give target_text so the app can measure word accuracy.',
@@ -1224,7 +1264,7 @@ ${about}
 You hear their real voice, so also notice pronunciation — final consonants, -s/-ed endings, word stress, /θ ð/ — which Vietnamese speakers often struggle with.
 Corrections are light, like a friend: at most one per turn and only when it matters or keeps repeating — say how a native would put it, then carry on.
 ${ieltsLive}
-When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train instant speaking without translating in their head: fire ONE short prompt at a time and keep the pace FAST; they should answer with one natural sentence within about 3 seconds; never explain at length. If they hesitate, stall or answer in Vietnamese, give the natural answer in one breath, make them say it once, then fire the next prompt. Mix these as the unit's focus suggests: quick-fire personal questions; instant translation (you may say a short Vietnamese line, they say it in English); situation reactions ("Your boss just moved the deadline to today — reply!"); shadowing (they repeat your native line with the same rhythm); chains (you twist a follow-up on their answer). Do 12–15 prompts, then a short verdict: how many they nailed out of the total, which prompt type was slowest, 3 phrases to keep — and call save_drill with unit, correct and total. The app measures their reaction time itself.
+${roastBase || corr === 'light' ? '' : corrRule(true) + String.fromCharCode(10)}When a message starts with "[MISSION <id>]", run a ROLE-PLAY MISSION: you become the role given, in a realistic scene; open the scene yourself in one or two lines, fully in character. NO FREE RIDES: never do the learner's job for them or hand them ready-made lines; react like the real person would (ask for missing details, push back a little) so they must reach each checkpoint in their own words. Exception: when they tap HINT, step out for that one line as asked, then resume the scene. During the scene do not correct them; stay in character and simplify if they freeze or slip into Vietnamese. When every checkpoint is reached (or they ask to stop), close the scene in character, call complete_mission with met and total FIRST, then step out and in 2–3 lines tell them which checkpoints they reached, what worked, and 2 natural phrases to keep. Never mention the function out loud.${String.fromCharCode(10)}When a message starts with "[REFLEX <unit id>]", run a REFLEX DRILL to train instant speaking without translating in their head: fire ONE short prompt at a time and keep the pace FAST; they should answer with one natural sentence within about 3 seconds; never explain at length. If they hesitate, stall or answer in Vietnamese, give the natural answer in one breath, make them say it once, then fire the next prompt. Mix these as the unit's focus suggests: quick-fire personal questions; instant translation (you may say a short Vietnamese line, they say it in English); situation reactions ("Your boss just moved the deadline to today — reply!"); shadowing (they repeat your native line with the same rhythm); chains (you twist a follow-up on their answer). Do 12–15 prompts, then a short verdict: how many they nailed out of the total, which prompt type was slowest, 3 phrases to keep — and call save_drill with unit, correct and total. The app measures their reaction time itself.
 ${roastBase ? '' : 'Every few minutes and near the end, call save_memory with 1–5 short Vietnamese notes (stories they told, topics you covered, open threads) so you can pick them up next time. '}
 ${!roastBase && lmem.length ? `What you remember from earlier sessions (bring it up naturally, don't recite it):
 - ${lmem.join(String.fromCharCode(10) + '- ')}
@@ -1260,11 +1300,12 @@ function flush(L) {
 }
 
 
-async function callStart(firstText, drill = null) {
+async function callStart(firstText, drill = null, mission = null) {
   if (live) return;
   if (!key) { $('#set').showModal(); return; }
   civicsSet = null; // cuộc gọi mới = bộ câu civics mới (nối lại phiên thì giữ)
-  const L = live = { inT: '', outT: '', turns: [], sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0, h0: hist.length, mode: callMode };
+  const L = live = { inT: '', outT: '', turns: [], sources: [], next: 0, ready: false, muted: false, drill, reacts: [], loud: 0, h0: hist.length, mode: callMode, mission: mission?.id || null, hints: 0 };
+  if (mission) { showCard(L, { title: '🎭 ' + mission.t, text: mission.goal + '\n' + mission.steps.map((s, i) => `${i + 1}. ${s}`).join('\n') }); L.cardText = ''; } // thẻ mục tiêu, không dùng làm câu gốc đọc to
   const gone = () => live !== L; // bấm Kết thúc trong lúc đang kết nối: mọi thứ mở xong sau đó phải nhả ngay (micro, WebSocket, khoá màn hình)
   callUI('connecting');
   if (window.Avatar) await Avatar.start(() => live === L && callUI('listening'));
@@ -1308,7 +1349,7 @@ function connect(L, firstText) {
   ws.onopen = () => ws.send(JSON.stringify({ setup: {
     model: `models/${LIVE_MODEL}`,
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: LIVE_VOICE } } } },
-    systemInstruction: { parts: [{ text: livePrompt() }] },
+    systemInstruction: { parts: [{ text: livePrompt() + speedRule() }] },
     tools: LIVE_TOOLS, inputAudioTranscription: {}, outputAudioTranscription: {},
     sessionResumption: L.handle ? { handle: L.handle } : {},
     contextWindowCompression: { slidingWindow: {} },
@@ -1358,6 +1399,7 @@ function onLive(L, m, firstText) {
       if (f.name === 'save_memory') addNotes(f.args?.notes);
       if (f.name === 'save_speaking_result') exam === 'ielts' ? saveExam('Speaking', { ...f.args, range: [f.args?.low, f.args?.high] }) : saveExam2(examName(), 'Speaking', f.args?.overall, [f.args?.low, f.args?.high]);
       if (f.name === 'save_drill' && L.drill) saveDrill(L, f.args || {});
+      if (f.name === 'complete_mission' && L.mission) saveMission(L, f.args || {});
       if (f.name === 'show_card') showCard(L, f.args || {});
       if (f.name === 'start_timer') startTimer(L, f.args || {});
       if (f.name === 'save_exam_result') { const a = f.args || {}; saveExam2(examName(), a.skill, a.overall, [a.low, a.high], a.feedback); }
@@ -1431,6 +1473,11 @@ function wordMatch(target, said) {
   while (i < a.length) { if (j < b.length && a[i] === b[j]) { i++; j++; } else if (j < b.length && dp[i][j + 1] >= dp[i + 1][j]) j++; else missed.push(a[i++]); }
   return { pct: Math.round(100 * dp[0][0] / a.length), missed };
 }
+function saveMission(L, a) {
+  const total = Math.max(1, Math.min(10, Math.round(+a.total) || 3)), met = Math.max(0, Math.min(total, Math.round(+a.met) || 0));
+  misDone = { ...misDone, [L.mission]: { date: today(), met, total, hints: L.hints || 0 } }; store('gs_mis', misDone);
+  $('#ecTimer').textContent = `✓ Xong nhiệm vụ: đạt ${met}/${total} mốc${L.hints ? ` · ${L.hints} lần gợi ý` : ''}`; $('#examCard').hidden = false;
+}
 function showCard(L, a) { L.cardText = String(a.text || ''); $('#ecTitle').textContent = String(a.title || ''); $('#ecText').textContent = L.cardText; $('#ecTimer').textContent = ''; $('#examCard').hidden = false; }
 function startTimer(L, a) {
   clearInterval(L.tid); const prep = Math.max(0, Math.min(300, +a.prep_seconds || 0)), speak = Math.max(5, Math.min(600, +a.speak_seconds || 60));
@@ -1466,7 +1513,7 @@ function callEnd(L, msg) {
   if (live === L) live = null;
   release(L);
   window.Avatar?.stop();
-  flush(L);
+  flush(L); if (L.turns.some(t => t.role === 'user')) markDay();
   callUI('idle', msg);
   summarizeCall(L);
 }
@@ -1511,6 +1558,7 @@ $('#callMute').onpointerdown = e => {
   L.holding = true; stopPlayback(L); $('#callMute').classList.add('on'); L.ws.send(JSON.stringify({ realtimeInput: { activityStart: {} } }));
 };
 $('#callMute').onpointerup = $('#callMute').onpointercancel = $('#callMute').onlostpointercapture = pttUp;
+$('#callTip').onclick = () => { const L = live, now = performance.now(); if (!L?.ready || now - (L.tipAt || -1e4) < 4000) return; L.tipAt = now; L.hints++; stopPlayback(L); tellSam(L, HINT); $('#callStatus').textContent = '💡 Sam đang gợi ý…'; };
 $('#callRoad').onclick = () => { $('#call').hidden = true; show('vRoad'); };
 $('#callText').onclick = () => { $('#call').hidden = true; };
 $('#callBtn').onclick = () => { $('#call').hidden = false; callUI(live ? 'listening' : 'idle'); };

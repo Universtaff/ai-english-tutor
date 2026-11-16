@@ -1,7 +1,7 @@
 // Lưu sẵn vỏ app nhỏ (~vài trăm KB); tệp lớn (nhân vật 12 MB, video, cảnh) lưu khi thực sự dùng tới — không bắt điện thoại tải 26 MB mỗi bản mới. Gọi AI vẫn cần mạng.
-const C = 'gia-su-v62';
+const C = 'gia-su-v63';
 const ASSETS = ['./', 'index.html', 'manifest.json', 'sam-192.png', 'sam-512.png', 'xianxia.mjs', 'mocap.mjs',
-  'data/targets.js', 'data/exams.js', 'data/langs.js', 'data/us-civics.js'];
+  'data/targets.js', 'data/exams.js', 'data/langs.js', 'data/us-civics.js', 'data/missions.js'];
 self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim()))); // bỏ cache phiên bản cũ
 self.addEventListener('fetch', e => {

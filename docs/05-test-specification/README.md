@@ -31,6 +31,11 @@
 | A-l2 | Nút ngôn ngữ xoay Trung → Đức → Hàn → Nhật → Đài; lời dặn đúng ngôn ngữ; bộ lọc chữ: Hàn cho Hangul, chặn chữ Thái; Đức chặn chữ Hán |
 | A-recap | Giả lập Gemini: hết buổi gọi ≥ 3 lượt → thẻ 📝 tóm tắt, lỗi vào sổ lỗi, từ vào sổ từ, tóm tắt vào trí nhớ; `[FIXES]` + thẻ `<review>` dời lịch ôn lỗi |
 | A-honest | Lời dặn IELTS có BAND GUIDE + khoảng band + luật bài yếu; thẻ band lưu `range`; điểm thi thật vào lời dặn hiệu chỉnh |
+| A-mission | 12 nhiệm vụ; tab 🎭 dựng danh sách; bấm → lời mở `[MISSION id]` + thẻ mục tiêu; `complete_mission` lưu mốc đạt, danh sách hiện ✓; cả vòng gọi giả lập → Kết thúc → tóm tắt dùng đúng lời thoại cuộc gọi |
+| A-hint | Nút 💡 gửi tin HINT vào phiên Live, đếm `L.hints` |
+| A-corr | Mức sửa lỗi `now`/`end` đổi đúng câu trong lời dặn Học (chat + gọi), `light` không thêm gì; tốc độ vào `systemInstruction` và `rate` giọng đọc |
+| A-streak | Ngày học liên tiếp tính đúng (có/không có hôm nay); thẻ Hôm nay hiện 🔥 |
+| A-rec | Vòng đời ghi âm 🎙: bấm đôi chỉ mở 1 micro, bấm lại thì dừng + nhả micro, hẹn tự dừng 15 s, không có MediaRecorder thì báo ⚠️ và nhả micro |
 | A-pron | Giả lập Gemini: `pronCheck` gửi `inline_data` âm thanh + câu gốc, hiện độ rõ ★ + từ đọc sai + nhãn ước lượng |
 | (luật QA) | Mục kiểm chạy thật phải trả về danh sách rỗng mới xanh; văng lỗi / quá giờ = ĐỎ (`okList`) |
 Giới hạn: headless vẽ chậm → KHÔNG đo được fps máy thật. Điều kiện chờ dùng vòng lặp thăm dò, không `sleep` cố định.

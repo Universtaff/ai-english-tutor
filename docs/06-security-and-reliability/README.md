@@ -5,7 +5,7 @@
 - Repo công khai: `tools/qa.mjs` quét khoá (`AIza…`, `sk-…`, khoá riêng) và email nội bộ.
 - Mô tả cá nhân người dùng (`gs_about`) chỉ nằm trên máy.
 - Không bật micro khi chưa bấm Gọi; kết thúc gọi thì giải phóng micro + khoá màn hình — kể cả khi bấm Kết thúc lúc đang kết nối (micro/WebSocket mở xong sau đó phải được nhả ngay).
-- "Xoá hết dữ liệu" xoá cả trong bộ nhớ lẫn `localStorage`: trò chuyện, band, điểm, thi thử, sổ từ, nhật ký phản xạ, trí nhớ Tâm sự/Cục súc/HSK3. Chỉ giữ khoá API, model, phần "Sam nên biết gì về bạn" và chế độ đang chọn.
+- "Xoá hết dữ liệu" xoá cả trong bộ nhớ lẫn `localStorage`: trò chuyện, band, điểm, thi thử, sổ từ, sổ lỗi, nhật ký phản xạ, kết quả nhập vai, chuỗi ngày, trí nhớ mọi chế độ. Chỉ giữ khoá API, model, phần "Sam nên biết gì về bạn", chế độ đang chọn và các tuỳ chọn trong Cài đặt (giữ nút để nói, mức sửa lỗi, tốc độ nói).
 - Mã và dữ liệu chạy từ CDN phải khoá đúng phiên bản/SHA (three@0.180.0, TalkingHead@1.7, HeadAudio@1.0.0, mocap theo SHA); không trỏ vào nhánh (`@main`/`@master`).
 - Service worker xoá cache của phiên bản cũ khi phiên bản mới kích hoạt.
 - Đề thi: Sam chỉ tả khuôn đề và tự soạn câu hỏi cùng dạng; KHÔNG chép câu hỏi, bài mẫu, bảng tiêu chí nguyên văn của ETS/Pearson/Duolingo/Cambridge vào repo công khai. Bộ civics USCIS là tài liệu công của chính phủ Mỹ nên được chép, có ghi nguồn.

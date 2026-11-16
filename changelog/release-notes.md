@@ -2,6 +2,14 @@
 
 Tóm tắt từ `git log` (mới → cũ). Phiên bản service worker `gia-su-vNN` tăng mỗi lần đẩy.
 
+## 2026-11-16 · v63 — nâng cấp đợt 3: nhập vai, gợi ý, cách học, chuỗi ngày
+
+- 🎭 Nhập vai (tab Lộ trình): 12 cảnh đời thật A2→B2 (gọi cà phê, nhận phòng trục trặc, khám bệnh, cửa khẩu sân bay, phỏng vấn xin việc, xin tăng lương…). Sam đóng vai người thật, không làm hộ; bạn tự đạt 3 mốc hiện trên thẻ; xong cảnh Sam nhận xét và lưu số mốc đạt.
+- 💡 Nút Gợi ý trong cuộc gọi: bí thì bấm, Sam gợi 2 câu ngắn có thể nói tiếp rồi chờ bạn nói.
+- Cài đặt cách học: mức sửa lỗi cho chế độ Học (sửa ngay · vừa phải · chỉ cuối buổi) và tốc độ nói của Sam (chậm · bình thường · nhanh như người bản xứ).
+- 🔥 Chuỗi ngày học trong thẻ Hôm nay.
+- QA thêm trọn vòng gọi → Kết thúc → tóm tắt, và vòng đời nút ghi âm 🎙 (bấm đôi, tự dừng 15 s, máy không ghi âm được).
+
 ## 2026-11-16 · v62 — vá lỗi sau đợt kiểm của Codex
 
 - Nối lại cuộc gọi: báo hết giờ (goAway) và rớt mạng dùng chung giới hạn 3 lần; hiện "Đang nối lại… (1/3)".

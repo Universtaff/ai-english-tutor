@@ -338,5 +338,54 @@ const rc = await ev(`(async()=>{const r=[],F=window.fetch,reqs=[],cm=callMode,h0
   return r})()`);
 check(okList(rc), 'đợt 2: tóm tắt sau buổi gọi → sổ lỗi/sổ từ/trí nhớ · [FIXES] · điểm IELTS dạng khoảng + điểm thi thật · chấm phát âm từ ghi âm', Array.isArray(rc) ? rc.join('; ') : JSON.stringify(rc));
 
+// Đợt 3 (v63): cách học (mức sửa lỗi, tốc độ nói), chuỗi ngày, nhập vai + nút gợi ý, trọn vòng gọi → Kết thúc → tóm tắt; vòng đời ghi âm 🎙.
+const b3 = await ev(`(async()=>{const r=[],WS=window.WebSocket,socks=[],wait=ms=>new Promise(z=>setTimeout(z,ms)),msg=(ws,o)=>ws.onmessage({data:JSON.stringify(o)});
+  const c0=callMode,k0=[corr,speed],d0=JSON.stringify(days),m0=JSON.stringify(misDone),h0=hist.length,f0=JSON.stringify(fixes),v0=JSON.stringify(vocab),l0=JSON.stringify(lmem),gj=geminiJSON,p0=ptt;ptt=false;
+  callMode='learn';corr='now';if(!/fix everything now/.test(systemPrompt())||!/fix everything now/.test(livePrompt()))r.push('Sửa ngay: lời dặn Học thiếu');
+  corr='end';if(!/only at the end/.test(systemPrompt())||!/only at the end/.test(livePrompt()))r.push('Chỉ cuối buổi: lời dặn Học thiếu');
+  callMode='roast';if(/only at the end/.test(livePrompt()+systemPrompt()))r.push('mức sửa lỗi lọt vào Cục súc');callMode='learn';
+  corr='light';if(/CORRECTIONS —/.test(systemPrompt()+livePrompt()))r.push('Vừa phải mà vẫn chèn luật sửa lỗi');
+  const uts=[];speechSynthesis.speak=u=>uts.push(u);speed='slow';speak('Hello there');speed='normal';speak('Hello there');delete speechSynthesis.speak;if(!(uts[0]?.rate<uts[1]?.rate))r.push('tốc độ Chậm không làm giọng đọc chậm hơn');
+  document.getElementById('openSet').click();document.getElementById('corr').value='end';document.getElementById('speed').value='fast';document.getElementById('save').click();if(corr!=='end'||speed!=='fast'||localStorage.getItem('gs_corr')===null)r.push('Cài đặt không lưu mức sửa lỗi/tốc độ');
+  const ds=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toLocaleDateString('sv')};
+  days=[ds(3),ds(2),ds(1)];if(streak()!==3)r.push('chuỗi tới hôm qua sai: '+streak());markDay();if(streak()!==4)r.push('học hôm nay không cộng chuỗi');days=[ds(5),ds(1)];if(streak()!==1)r.push('chuỗi đứt mà vẫn đếm');
+  days=[ds(1),today()];roadTab='I';renderRoad();if(!/🔥 2 ngày liên tiếp/.test(document.querySelector('#road .today')?.textContent||''))r.push('thẻ Hôm nay thiếu 🔥');
+  if(MISSIONS.length!==12||MISSIONS.some(m=>!m.role||!m.goal||m.steps?.length!==3))r.push('dữ liệu nhập vai thiếu');
+  roadTab='M';renderRoad();const rows=document.querySelectorAll('#road .missions .unit');if(rows.length!==12)r.push('tab Nhập vai không đủ dòng: '+rows.length);
+  window.WebSocket=class{constructor(u){this.url=u;this.readyState=1;this.sent=[];socks.push(this);setTimeout(()=>this.onopen?.(),10)}send(d){this.sent.push(JSON.parse(d))}close(){}};
+  const reqs=[];geminiJSON=async p=>{reqs.push(p[0].text);return {summary:'QA nhập vai',fixes:[],words:[],next:''}};
+  const kk=key;key='';callMode='chat';startMission('M02');document.getElementById('set').close();if(callMode!=='chat'||live)r.push('chưa có khoá mà vẫn đổi chế độ / mở cuộc gọi');key=kk;
+  speed='slow';callMode='roast';rows[0].querySelector('button').click();for(let i=0;i<60&&!(socks.at(-1)?.sent.length);i++)await wait(50);const L=live;
+  if(!L||L.mission!=='M01')r.push('bấm nhiệm vụ không mở cuộc gọi');else{
+    if(callMode!=='learn')r.push('nhập vai không chuyển sang Học');
+    if(document.getElementById('examCard').hidden||!/Gọi cà phê/.test(document.getElementById('ecTitle').textContent)||!/1[.] Gọi 1 đồ uống/.test(document.getElementById('ecText').textContent))r.push('không hiện thẻ mục tiêu');
+    const w=socks.at(-1),sys=w.sent[0]?.setup?.systemInstruction?.parts[0].text||'';if(!/ROLE-PLAY MISSION/.test(sys))r.push('lời dặn gọi thiếu luật nhập vai');if(!/SLOWER/.test(sys))r.push('tốc độ Chậm không vào lời dặn cuộc gọi');if(!/tap HINT, step out/.test(sys)||!/complete_mission with met and total FIRST/.test(sys)||/fix everything now/.test(sys)&&!/never during a mock test/.test(sys))r.push('luật nhập vai thiếu ngoại lệ gợi ý / lưu trước khi nhận xét');if(/OVERRIDE|CỤC SÚC/.test(sys))r.push('nhập vai từ Cục súc mà vẫn chạy lời dặn Cục súc');
+    msg(w,{setupComplete:{}});const first=w.sent.find(x=>x.clientContent)?.clientContent.turns[0].parts[0].text||'';if(!first.startsWith('[MISSION M01]')||!first.includes('barista'))r.push('lời mở không phải nhiệm vụ: '+first.slice(0,60));
+    document.getElementById('callTip').click();if(w.sent.filter(x=>/HINT button/.test(x.clientContent?.turns?.[0]?.parts?.[0]?.text||'')).length!==1||L.hints!==1)r.push('nút Gợi ý không gửi HINT');
+    for(const [u,s] of [['Can I get a large latte with oat milk','Sure, anything else?'],['How much is it','Six fifty'],['What is the wifi password','It is on the receipt']]){msg(w,{serverContent:{inputTranscription:{text:u}}});msg(w,{serverContent:{outputTranscription:{text:s}}});msg(w,{serverContent:{turnComplete:true}})}
+    msg(w,{toolCall:{functionCalls:[{id:'1',name:'complete_mission',args:{met:2,total:3}}]}});if(misDone.M01?.met!==2||misDone.M01?.hints!==1)r.push('complete_mission không lưu: '+JSON.stringify(misDone.M01));
+    days=[];setCallMode('chat'); // đổi chế độ giữa chừng: tóm tắt vẫn theo chế độ lúc bắt đầu gọi
+    callEnd(L);await wait(50);
+    if(!reqs.length||!/Learner: Can I get a large latte/.test(reqs[0])||!/Learner: What is the wifi password/.test(reqs[0]))r.push('Kết thúc gọi không tóm tắt đúng lời thoại cuộc gọi');
+    if(!lmem.includes('QA nhập vai'))r.push('tóm tắt không vào trí nhớ chế độ lúc gọi (Học)');
+    if(!days.includes(today()))r.push('cuộc gọi có nói mà không tính ngày học');
+    roadTab='M';renderRoad();if(!(document.querySelector('#road .missions .unit')?.textContent||'').includes('đạt 2/3 mốc'))r.push('danh sách không hiện ✓ nhiệm vụ');
+  }
+  window.WebSocket=WS;geminiJSON=gj;
+  const md=navigator.mediaDevices,gum=md.getUserMedia;let nGum=0;const strs=[];md.getUserMedia=async c=>{nGum++;const s=await gum.call(md,c);strs.push(s);return s};
+  const pc=pronCheck;pronCheck=async()=>{};const ST=window.setTimeout,caps=[],btn=document.createElement('button');document.body.append(btn);
+  const a1=pronRecord(btn,'hello','English'),a2=pronRecord(btn,'hello','English');await a1;await a2;
+  if(nGum!==1)r.push('bấm đôi mở '+nGum+' micro');if(recBusy?.state!=='recording'||btn.textContent!=='⏹')r.push('không vào trạng thái ghi');
+  await pronRecord(btn,'hello','English');await wait(200);if(recBusy||btn.textContent!=='🎙'||strs[0]?.getTracks().some(t=>t.readyState!=='ended'))r.push('bấm lại không dừng ghi / không nhả micro');
+  window.setTimeout=(f,ms,...x)=>{if(ms===15000)caps.push(f);return ST(f,ms,...x)};await pronRecord(btn,'hello','English');window.setTimeout=ST;
+  if(caps.length!==1)r.push('không hẹn tự dừng 15 s');else{caps[0]();await wait(200);if(recBusy||strs.at(-1).getTracks().some(t=>t.readyState!=='ended'))r.push('hết 15 s không tự dừng / không nhả micro')}
+  const MR=window.MediaRecorder;window.MediaRecorder=undefined;await pronRecord(btn,'hello','English');window.MediaRecorder=MR;
+  if(btn.textContent!=='⚠️'||recBusy||strs.at(-1).getTracks().some(t=>t.readyState!=='ended'))r.push('không có MediaRecorder: không báo ⚠️ / không nhả micro');
+  md.getUserMedia=gum;pronCheck=pc;btn.remove();
+  [corr,speed]=k0;store('gs_corr',corr);store('gs_speed',speed);days=JSON.parse(d0);store('gs_days',days);misDone=JSON.parse(m0);store('gs_mis',misDone);hist.splice(h0);store('ie_hist',hist.slice(-40));
+  fixes=JSON.parse(f0);store('gs_fix',fixes);vocab=JSON.parse(v0);store('gs_vocab',vocab);lmem=JSON.parse(l0);store('gs_lmem',lmem);ptt=p0;setCallMode(c0);roadTab='I';renderRoad();document.getElementById('call').hidden=true;
+  return r})()`);
+check(okList(b3), 'đợt 3: mức sửa lỗi + tốc độ nói · chuỗi 🔥 · nhập vai + 💡 gợi ý + trọn vòng gọi → tóm tắt · vòng đời ghi âm 🎙', Array.isArray(b3) ? b3.join('; ') : JSON.stringify(b3));
+
 const e2 = [...new Set(errs)]; check(!e2.length, 'không lỗi console / exception trong cả phiên', e2.slice(0, 4).join(' | '));
 await finish();
